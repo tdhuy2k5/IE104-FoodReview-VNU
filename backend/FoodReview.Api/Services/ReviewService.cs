@@ -18,14 +18,14 @@ public class ReviewService : IReviewService
     {
         using var conn = _dbFactory.CreateConnection();
 
-        var place = await conn.QueryFirstOrDefaultAsync<dynamic>(
+        var place = await conn.QueryFirstOrDefaultAsync<PlaceStatusRow>(
             "SELECT Id, Name, Status FROM Places WHERE Id = @Id", new { Id = placeId });
 
         if (place == null)
         {
             throw new KeyNotFoundException("Địa điểm không tồn tại.");
         }
-        if ((int)place.Status == 2)
+        if (place.Status == PlaceStatus.Hidden)
         {
             throw new KeyNotFoundException("Địa điểm đã bị ẩn.");
         }
@@ -73,7 +73,7 @@ public class ReviewService : IReviewService
         return new ReviewDto(
             reviewId,
             placeId,
-            (string)place.Name,
+            place.Name,
             new ReviewAuthorDto(user!.Id, user.DisplayName, user.AvatarUrl),
             request.Rating,
             request.Content.Trim(),
@@ -88,8 +88,8 @@ public class ReviewService : IReviewService
     {
         using var conn = _dbFactory.CreateConnection();
 
-        var review = await conn.QueryFirstOrDefaultAsync<dynamic>(
-            "SELECT r.*, p.Name AS PlaceName FROM Reviews r JOIN Places p ON r.PlaceId = p.Id WHERE r.Id = @Id",
+        var review = await conn.QueryFirstOrDefaultAsync<ReviewRow>(
+            "SELECT r.Id, r.PlaceId, r.UserId, r.Status, r.CreatedAt, p.Name AS PlaceName FROM Reviews r JOIN Places p ON r.PlaceId = p.Id WHERE r.Id = @Id",
             new { Id = reviewId });
 
         if (review == null)
@@ -98,7 +98,7 @@ public class ReviewService : IReviewService
         }
 
         // GUARD: Only author can edit
-        if ((int)review.UserId != userId)
+        if (review.UserId != userId)
         {
             throw new UnauthorizedAccessException("Bạn chỉ được phép chỉnh sửa đánh giá của chính mình.");
         }
@@ -133,13 +133,13 @@ public class ReviewService : IReviewService
 
         return new ReviewDto(
             reviewId,
-            (int)review.PlaceId,
-            (string)review.PlaceName,
+            review.PlaceId,
+            review.PlaceName,
             new ReviewAuthorDto(user!.Id, user.DisplayName, user.AvatarUrl),
             request.Rating,
             request.Content.Trim(),
-            (ReviewStatus)(int)review.Status,
-            DateTime.Parse((string)review.CreatedAt),
+            review.Status,
+            review.CreatedAt,
             DateTime.UtcNow,
             images
         );
@@ -181,7 +181,7 @@ public class ReviewService : IReviewService
             ORDER BY r.CreatedAt DESC
             LIMIT @PageSize OFFSET @Offset";
 
-        var rows = await conn.QueryAsync<dynamic>(sql, new
+        var rows = await conn.QueryAsync<ReviewRow>(sql, new
         {
             PlaceId = placeId,
             PageSize = pageSize,
@@ -191,21 +191,20 @@ public class ReviewService : IReviewService
         var items = new List<ReviewDto>();
         foreach (var row in rows)
         {
-            int revId = (int)row.Id;
             var images = (await conn.QueryAsync<ReviewImageDto>(
                 "SELECT Id, ImageUrl, AltText FROM ReviewImages WHERE ReviewId = @ReviewId",
-                new { ReviewId = revId })).AsList();
+                new { ReviewId = row.Id })).AsList();
 
             items.Add(new ReviewDto(
-                revId,
-                (int)row.PlaceId,
-                (string)row.PlaceName,
-                new ReviewAuthorDto((int)row.AuthorId, (string)row.AuthorName, (string?)row.AuthorAvatar),
-                (int)row.Rating,
-                (string)row.Content,
-                (ReviewStatus)(int)row.Status,
-                DateTime.Parse((string)row.CreatedAt),
-                DateTime.Parse((string)row.UpdatedAt),
+                row.Id,
+                row.PlaceId,
+                row.PlaceName,
+                new ReviewAuthorDto(row.AuthorId, row.AuthorName, row.AuthorAvatar),
+                row.Rating,
+                row.Content,
+                row.Status,
+                row.CreatedAt,
+                row.UpdatedAt,
                 images
             ));
         }
@@ -233,7 +232,7 @@ public class ReviewService : IReviewService
             ORDER BY r.CreatedAt DESC
             LIMIT @PageSize OFFSET @Offset";
 
-        var rows = await conn.QueryAsync<dynamic>(sql, new
+        var rows = await conn.QueryAsync<ReviewRow>(sql, new
         {
             UserId = userId,
             PageSize = pageSize,
@@ -243,21 +242,20 @@ public class ReviewService : IReviewService
         var items = new List<ReviewDto>();
         foreach (var row in rows)
         {
-            int revId = (int)row.Id;
             var images = (await conn.QueryAsync<ReviewImageDto>(
                 "SELECT Id, ImageUrl, AltText FROM ReviewImages WHERE ReviewId = @ReviewId",
-                new { ReviewId = revId })).AsList();
+                new { ReviewId = row.Id })).AsList();
 
             items.Add(new ReviewDto(
-                revId,
-                (int)row.PlaceId,
-                (string)row.PlaceName,
-                new ReviewAuthorDto((int)row.AuthorId, (string)row.AuthorName, (string?)row.AuthorAvatar),
-                (int)row.Rating,
-                (string)row.Content,
-                (ReviewStatus)(int)row.Status,
-                DateTime.Parse((string)row.CreatedAt),
-                DateTime.Parse((string)row.UpdatedAt),
+                row.Id,
+                row.PlaceId,
+                row.PlaceName,
+                new ReviewAuthorDto(row.AuthorId, row.AuthorName, row.AuthorAvatar),
+                row.Rating,
+                row.Content,
+                row.Status,
+                row.CreatedAt,
+                row.UpdatedAt,
                 images
             ));
         }

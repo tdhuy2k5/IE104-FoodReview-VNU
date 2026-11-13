@@ -75,6 +75,10 @@ public class PlaceService : IPlaceService
             _ => "ReviewCount DESC, AverageRating DESC"
         };
 
+        var havingSql = filter.MinRating.HasValue
+            ? "HAVING COALESCE(AVG(CASE WHEN r.Status = 1 THEN r.Rating END), 0.0) >= @MinRating"
+            : string.Empty;
+
         var querySql = $@"
             SELECT 
                 p.Id, p.Name, p.Slug, p.Description, p.Address,
@@ -90,11 +94,14 @@ public class PlaceService : IPlaceService
             LEFT JOIN Reviews r ON r.PlaceId = p.Id
             WHERE {whereSql}
             GROUP BY p.Id, a.Name, c.Name
-            HAVING (@MinRating IS NULL OR COALESCE(AVG(CASE WHEN r.Status = 1 THEN r.Rating END), 0.0) >= @MinRating)
+            {havingSql}
             ORDER BY {orderBySql}
             LIMIT @PageSize OFFSET @Offset";
 
-        parameters.Add("MinRating", filter.MinRating);
+        if (filter.MinRating.HasValue)
+        {
+            parameters.Add("MinRating", filter.MinRating.Value);
+        }
         parameters.Add("PageSize", filter.PageSize);
         parameters.Add("Offset", (filter.PageIndex - 1) * filter.PageSize);
 
@@ -124,47 +131,22 @@ public class PlaceService : IPlaceService
             WHERE p.Id = @Id
             GROUP BY p.Id, a.Name, c.Name";
 
-        var place = await conn.QueryFirstOrDefaultAsync<dynamic>(placeSql, new { Id = id });
+        var place = await conn.QueryFirstOrDefaultAsync<PlaceDetailDto>(placeSql, new { Id = id });
         if (place == null) return null;
 
-        var menuItems = (await conn.QueryAsync<MenuItemDto>(
+        place.MenuItems = (await conn.QueryAsync<MenuItemDto>(
             "SELECT Id, Name, Price, Note FROM MenuItems WHERE PlaceId = @Id", new { Id = id })).AsList();
 
-        var reviews = await GetReviewsForPlaceAsync(conn, id);
+        place.RecentReviews = await GetReviewsForPlaceAsync(conn, id);
 
-        bool isFavorite = false;
         if (currentUserId.HasValue)
         {
-            isFavorite = await conn.ExecuteScalarAsync<int>(
+            place.IsFavorite = await conn.ExecuteScalarAsync<int>(
                 "SELECT COUNT(1) FROM Favorites WHERE UserId = @UserId AND PlaceId = @PlaceId",
                 new { UserId = currentUserId.Value, PlaceId = id }) > 0;
         }
 
-        return new PlaceDetailDto(
-            (int)place.Id,
-            (string)place.Name,
-            (string)place.Slug,
-            (string?)place.Description,
-            (string)place.Address,
-            (int)place.AreaId,
-            (string)place.AreaName,
-            (int)place.CategoryId,
-            (string)place.CategoryName,
-            (decimal)place.PriceMin,
-            (decimal)place.PriceMax,
-            (string)place.OpeningHours,
-            (double?)place.Latitude,
-            (double?)place.Longitude,
-            (string?)place.CoverImageUrl,
-            (double)place.AverageRating,
-            (int)place.ReviewCount,
-            (PlaceStatus)(int)place.Status,
-            DateTime.Parse((string)place.CreatedAt),
-            DateTime.Parse((string)place.UpdatedAt),
-            menuItems,
-            reviews,
-            isFavorite
-        );
+        return place;
     }
 
     public async Task<PlaceDetailDto?> GetPlaceDetailBySlugAsync(string slug, int? currentUserId = null)
@@ -312,26 +294,25 @@ public class PlaceService : IPlaceService
             WHERE r.PlaceId = @PlaceId AND r.Status = 1
             ORDER BY r.CreatedAt DESC";
 
-        var reviewRows = await conn.QueryAsync<dynamic>(sql, new { PlaceId = placeId });
+        var reviewRows = await conn.QueryAsync<ReviewRow>(sql, new { PlaceId = placeId });
         var list = new List<ReviewDto>();
 
         foreach (var row in reviewRows)
         {
-            int revId = (int)row.Id;
             var images = (await conn.QueryAsync<ReviewImageDto>(
                 "SELECT Id, ImageUrl, AltText FROM ReviewImages WHERE ReviewId = @ReviewId",
-                new { ReviewId = revId })).AsList();
+                new { ReviewId = row.Id })).AsList();
 
             list.Add(new ReviewDto(
-                revId,
-                (int)row.PlaceId,
-                (string)row.PlaceName,
-                new ReviewAuthorDto((int)row.AuthorId, (string)row.AuthorName, (string?)row.AuthorAvatar),
-                (int)row.Rating,
-                (string)row.Content,
-                (ReviewStatus)(int)row.Status,
-                DateTime.Parse((string)row.CreatedAt),
-                DateTime.Parse((string)row.UpdatedAt),
+                row.Id,
+                row.PlaceId,
+                row.PlaceName,
+                new ReviewAuthorDto(row.AuthorId, row.AuthorName, row.AuthorAvatar),
+                row.Rating,
+                row.Content,
+                row.Status,
+                row.CreatedAt,
+                row.UpdatedAt,
                 images
             ));
         }

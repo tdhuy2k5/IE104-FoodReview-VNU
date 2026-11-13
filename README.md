@@ -46,6 +46,11 @@ IE104-FoodReview-VNU/
 │       ├── Data/                          # Connection Factory & Seed Data
 │       ├── Dockerfile                     # Multi-stage Docker build
 │       └── Program.cs                     # Startup Pipeline
+├── frontend/                              # Frontend thử nghiệm API (HTML/CSS/JS thuần)
+│   ├── index.html
+│   ├── css/styles.css
+│   ├── js/                                # config, api, auth, places, reviews, admin
+│   └── README.md                          # Hướng dẫn chạy & danh sách API đã nối
 ├── docker-compose.yml                     # Cấu hình container API + PostgreSQL
 ├── .dockerignore
 ├── GEMINI.md                              # Quy chuẩn pair-programming
@@ -68,6 +73,32 @@ docker compose up --build
 - **Swagger UI:** `http://localhost:5000/swagger`
 - **PostgreSQL Server:** `localhost:5432` (Database: `foodreview`, User: `foodreview_user`)
 
+Tài khoản thử nghiệm sẵn có:
+- **Admin:** `admin@langdaihoc.vn` / `Admin@123`
+- **Sinh viên:** `sinhvien@uit.edu.vn` / `Student@123`
+
+---
+
+## 🖥️ Frontend thử nghiệm API
+
+Thư mục `frontend/` chứa giao diện HTML + CSS + JavaScript thuần (không cần build) để thử toàn bộ API: đăng nhập, khám phá/lọc quán, chi tiết, yêu thích, đánh giá kèm upload ảnh và bảng quản trị.
+
+```bash
+# Cách A — chạy backend bằng Docker (PostgreSQL + API, cổng 5000)
+docker compose up --build
+
+# Cách B — chạy backend trực tiếp bằng .NET (cổng 5114, cần PostgreSQL)
+cd backend/FoodReview.Api
+dotnet run
+
+# Terminal khác — static server cho frontend
+cd frontend
+python -m http.server 5500
+```
+
+Mở 👉 **`http://localhost:5500`**. Frontend tự dò backend giữa Docker (`http://localhost:5000`) và `dotnet run` (`http://localhost:5114`), nên không cần sửa cấu hình. Nếu backend chạy ở cổng khác, đặt `API_BASE_URL` trong `frontend/js/config.js` hoặc thêm cổng vào `API_PORTS`.
+
+Chi tiết cấu trúc và danh sách endpoint đã nối: [`frontend/README.md`](frontend/README.md).
 Lệnh dừng container:
 ```bash
 docker compose down

@@ -55,7 +55,7 @@ public class InteractionService : IInteractionService
                 p.AreaId, a.Name AS AreaName,
                 p.CategoryId, c.Name AS CategoryName,
                 p.PriceMin, p.PriceMax, p.OpeningHours, p.CoverImageUrl,
-                CAST(COALESCE(ROUND(AVG(CASE WHEN r.Status = 1 THEN r.Rating END), 1), 0.0) AS REAL) AS AverageRating,
+                COALESCE(ROUND(AVG(CASE WHEN r.Status = 1 THEN r.Rating END), 1), 0.0)::DOUBLE PRECISION AS AverageRating,
                 COUNT(CASE WHEN r.Status = 1 THEN 1 END) AS ReviewCount,
                 p.Status
             FROM Favorites f
@@ -64,7 +64,7 @@ public class InteractionService : IInteractionService
             JOIN Categories c ON p.CategoryId = c.Id
             LEFT JOIN Reviews r ON r.PlaceId = p.Id
             WHERE f.UserId = @UserId AND p.Status = 1
-            GROUP BY p.Id
+            GROUP BY p.Id, a.Name, c.Name, f.CreatedAt
             ORDER BY f.CreatedAt DESC";
 
         var list = await conn.QueryAsync<PlaceSummaryDto>(sql, new { UserId = userId });
@@ -75,7 +75,7 @@ public class InteractionService : IInteractionService
     {
         using var conn = _dbFactory.CreateConnection();
 
-        var review = await conn.QueryFirstOrDefaultAsync<dynamic>(
+        var review = await conn.QueryFirstOrDefaultAsync<ReviewRow>(
             "SELECT r.Id, r.Content, r.UserId, u.DisplayName AS AuthorName FROM Reviews r JOIN Users u ON r.UserId = u.Id WHERE r.Id = @Id",
             new { Id = request.ReviewId });
 
@@ -117,10 +117,10 @@ public class InteractionService : IInteractionService
 
         return new ReportDto(
             reportId,
-            (int)review.Id,
-            (string)review.Content,
-            (int)review.UserId,
-            (string)review.AuthorName,
+            review.Id,
+            review.Content,
+            review.UserId,
+            review.AuthorName,
             reporter.Id,
             reporter.DisplayName,
             request.Reason,

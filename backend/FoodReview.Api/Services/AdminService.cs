@@ -33,25 +33,25 @@ public class AdminService : IAdminService
             WHERE (@Status IS NULL OR rep.Status = @Status)
             ORDER BY rep.CreatedAt DESC";
 
-        var rows = await conn.QueryAsync<dynamic>(sql, new { Status = status.HasValue ? (int)status.Value : (int?)null });
+        var rows = await conn.QueryAsync<ReportRow>(sql, new { Status = status.HasValue ? (int)status.Value : (int?)null });
         var list = new List<ReportDto>();
 
         foreach (var row in rows)
         {
             list.Add(new ReportDto(
-                (int)row.Id,
-                (int)row.ReviewId,
-                (string)row.ReviewContent,
-                (int)row.ReviewAuthorId,
-                (string)row.ReviewAuthorName,
-                (int)row.ReporterId,
-                (string)row.ReporterName,
-                (ReportReason)(int)row.Reason,
-                (string?)row.Description,
-                (ReportStatus)(int)row.Status,
-                DateTime.Parse((string)row.CreatedAt),
-                row.HandledAt != null ? DateTime.Parse((string)row.HandledAt) : (DateTime?)null,
-                (string?)row.HandledByName
+                row.Id,
+                row.ReviewId,
+                row.ReviewContent,
+                row.ReviewAuthorId,
+                row.ReviewAuthorName,
+                row.ReporterId,
+                row.ReporterName,
+                row.Reason,
+                row.Description,
+                row.Status,
+                row.CreatedAt,
+                row.HandledAt,
+                row.HandledByName
             ));
         }
 
@@ -104,20 +104,20 @@ public class AdminService : IAdminService
             FROM Users u
             ORDER BY u.CreatedAt DESC";
 
-        var rows = await conn.QueryAsync<dynamic>(sql);
+        var rows = await conn.QueryAsync<AdminUserRow>(sql);
         var list = new List<UserProfileDto>();
 
         foreach (var u in rows)
         {
             list.Add(new UserProfileDto(
-                (int)u.Id,
-                (string)u.Email,
-                (string)u.DisplayName,
-                (string?)u.AvatarUrl,
-                (string)u.Role,
-                DateTime.Parse((string)u.CreatedAt),
-                (int)u.TotalReviews,
-                (int)u.TotalFavorites
+                u.Id,
+                u.Email,
+                u.DisplayName,
+                u.AvatarUrl,
+                u.Role,
+                u.CreatedAt,
+                u.TotalReviews,
+                u.TotalFavorites
             ));
         }
 

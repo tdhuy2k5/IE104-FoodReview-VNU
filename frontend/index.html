@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Food Review - Khám phá và đánh giá quán ăn quanh Làng Đại học ĐHQG-HCM" />
+  <title>Food Review · Làng Đại học</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#" data-view="places" aria-label="Food Review - Trang chủ">
+        <span class="brand-mark" aria-hidden="true">🍜</span>
+        <span class="brand-text">
+          <strong>Food Review</strong>
+          <small>Làng Đại học</small>
+        </span>
+      </a>
+
+      <nav class="main-nav" aria-label="Điều hướng chính">
+        <button class="nav-link is-active" type="button" data-view="places">Khám phá</button>
+        <button class="nav-link auth-only" type="button" data-view="favorites">Yêu thích</button>
+        <button class="nav-link auth-only" type="button" data-view="my-reviews">Đánh giá của tôi</button>
+        <button class="nav-link admin-only" type="button" data-view="admin">Quản trị</button>
+      </nav>
+
+      <div class="header-actions">
+        <span id="apiStatus" class="api-status is-pending" title="Trạng thái kết nối backend">
+          <span class="dot"></span>
+          <span class="api-status-text">Đang kiểm tra API</span>
+        </span>
+        <div id="authArea" class="auth-area"><!-- rendered by auth.js --></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- ============ PLACES ============ -->
+    <section id="view-places" class="view is-active">
+      <div class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">IE104 · Làng Đại học ĐHQG-HCM</p>
+          <h1>Tìm quán ăn quanh Làng Đại học</h1>
+          <p class="hero-sub">Khám phá, lọc theo khu vực và ngân sách, đọc đánh giá thật từ sinh viên.</p>
+        </div>
+        <form class="hero-search" id="searchForm">
+          <input id="searchInput" type="search" placeholder="Tìm quán, món ăn, địa chỉ..." autocomplete="off" aria-label="Tìm kiếm quán ăn" />
+          <button class="btn btn-primary" type="submit">Tìm kiếm</button>
+        </form>
+      </div>
+
+      <form id="filterForm" class="filter-bar card">
+        <label class="field">
+          <span>Khu vực</span>
+          <select id="filterArea" name="areaId">
+            <option value="">Tất cả khu vực</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Danh mục</span>
+          <select id="filterCategory" name="categoryId">
+            <option value="">Tất cả danh mục</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Ngân sách</span>
+          <select id="filterPrice" name="maxPrice">
+            <option value="">Mọi mức giá</option>
+            <option value="20000">Dưới 20.000đ</option>
+            <option value="30000">Dưới 30.000đ</option>
+            <option value="50000">Dưới 50.000đ</option>
+            <option value="100000">Dưới 100.000đ</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Đánh giá</span>
+          <select id="filterRating" name="minRating">
+            <option value="">Mọi đánh giá</option>
+            <option value="4.5">4.5+</option>
+            <option value="4">4.0+</option>
+            <option value="3.5">3.5+</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Sắp xếp</span>
+          <select id="sortSelect" name="sortBy">
+            <option value="">Phổ biến</option>
+            <option value="rating">Đánh giá cao</option>
+            <option value="price_asc">Giá thấp → cao</option>
+            <option value="price_desc">Giá cao → thấp</option>
+            <option value="newest">Mới nhất</option>
+          </select>
+        </label>
+        <button class="btn btn-ghost filter-reset" type="button" id="resetFilters">Xóa lọc</button>
+      </form>
+
+      <div class="results-head">
+        <span id="placesCount" class="muted">Đang tải địa điểm...</span>
+      </div>
+
+      <div id="placesGrid" class="places-grid"></div>
+
+      <div id="placesEmpty" class="empty-state" hidden>
+        <span class="empty-icon">🔎</span>
+        <h3>Không tìm thấy quán ăn phù hợp</h3>
+        <p>Thử đổi từ khóa hoặc bỏ bớt bộ lọc.</p>
+        <button class="btn btn-primary" type="button" id="emptyReset">Xóa bộ lọc</button>
+      </div>
+
+      <div id="placesPagination" class="pagination"></div>
+    </section>
+
+    <!-- ============ FAVORITES ============ -->
+    <section id="view-favorites" class="view">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Bộ sưu tập</p>
+          <h2>Quán yêu thích của bạn</h2>
+        </div>
+        <button class="btn btn-ghost" type="button" data-view="places">← Khám phá thêm</button>
+      </div>
+
+      <div id="favoritesGrid" class="places-grid"></div>
+
+      <div id="favoritesEmpty" class="empty-state" hidden>
+        <span class="empty-icon">♡</span>
+        <h3>Chưa có quán yêu thích</h3>
+        <p>Nhấn “Lưu quán” khi xem chi tiết để thêm vào bộ sưu tập.</p>
+        <button class="btn btn-primary" type="button" data-view="places">Khám phá ngay</button>
+      </div>
+    </section>
+
+    <!-- ============ MY REVIEWS ============ -->
+    <section id="view-my-reviews" class="view">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Hoạt động</p>
+          <h2>Đánh giá của tôi</h2>
+        </div>
+        <button class="btn btn-ghost" type="button" data-view="places">← Khám phá thêm</button>
+      </div>
+
+      <div id="myReviewsList" class="review-list"></div>
+    </section>
+
+    <!-- ============ ADMIN ============ -->
+    <section id="view-admin" class="view">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Quản trị hệ thống</p>
+          <h2>Bảng điều khiển Admin</h2>
+        </div>
+        <button class="btn btn-ghost" type="button" id="adminReload">↻ Tải lại</button>
+      </div>
+
+      <div class="admin-grid">
+        <div class="card admin-panel">
+          <h3>🚩 Báo cáo vi phạm</h3>
+          <div id="adminReports"></div>
+        </div>
+        <div class="card admin-panel">
+          <h3>👥 Người dùng</h3>
+          <div id="adminUsers"></div>
+        </div>
+      </div>
+
+      <div class="card admin-panel">
+        <div class="panel-head">
+          <h3>📍 Địa điểm</h3>
+          <button class="btn btn-ghost btn-sm" type="button" id="toggleCreatePlace">+ Thêm địa điểm</button>
+        </div>
+
+        <form id="createPlaceForm" class="form-grid" hidden>
+          <label class="field">
+            <span>Tên quán *</span>
+            <input name="name" required maxlength="200" placeholder="VD: Cơm Tấm Cô Ba" />
+          </label>
+          <label class="field">
+            <span>Địa chỉ *</span>
+            <input name="address" required maxlength="300" placeholder="VD: Đường Tô Vĩnh Diện, KTX B" />
+          </label>
+          <label class="field">
+            <span>Khu vực *</span>
+            <select name="areaId" id="placeArea" required>
+              <option value="">Chọn khu vực</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Danh mục *</span>
+            <select name="categoryId" id="placeCategory" required>
+              <option value="">Chọn danh mục</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Giá thấp nhất (đ) *</span>
+            <input name="priceMin" type="number" min="0" step="1000" value="25000" required />
+          </label>
+          <label class="field">
+            <span>Giá cao nhất (đ) *</span>
+            <input name="priceMax" type="number" min="0" step="1000" value="45000" required />
+          </label>
+          <label class="field">
+            <span>Giờ mở cửa</span>
+            <input name="openingHours" placeholder="VD: 06:00 - 22:00" />
+          </label>
+          <label class="field">
+            <span>Ảnh bìa (URL)</span>
+            <input name="coverImageUrl" type="url" placeholder="https://..." />
+          </label>
+          <label class="field field-wide">
+            <span>Mô tả</span>
+            <textarea name="description" rows="2" placeholder="Giới thiệu ngắn về quán..."></textarea>
+          </label>
+          <div class="form-actions field-wide">
+            <button class="btn btn-primary" type="submit">Tạo địa điểm</button>
+            <button class="btn btn-ghost" type="button" id="cancelCreatePlace">Hủy</button>
+          </div>
+        </form>
+
+        <div id="adminPlaces"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>🍜 Food Review · IE104 — Thiết kế Giao diện Người dùng</span>
+      <span class="muted">Frontend test client · API: <code id="apiBaseLabel"></code></span>
+    </div>
+  </footer>
+
+  <!-- ============ PLACE DETAIL MODAL ============ -->
+  <div id="placeModal" class="modal" aria-hidden="true">
+    <div class="modal-card modal-lg" role="dialog" aria-modal="true" aria-label="Chi tiết địa điểm">
+      <button class="modal-close" type="button" data-close aria-label="Đóng">&times;</button>
+      <div id="placeDetail"></div>
+    </div>
+  </div>
+
+  <!-- ============ REPORT MODAL ============ -->
+  <div id="reportModal" class="modal" aria-hidden="true">
+    <div class="modal-card modal-sm" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+      <button class="modal-close" type="button" data-close aria-label="Đóng">&times;</button>
+      <h2 id="reportTitle">Báo cáo đánh giá</h2>
+      <p class="muted small">Báo cáo sẽ được gửi đến quản trị viên để xem xét.</p>
+      <form id="reportForm">
+        <input type="hidden" name="reviewId" />
+        <label class="field">
+          <span>Lý do *</span>
+          <select name="reason" required>
+            <option value="0">Spam / quảng cáo</option>
+            <option value="1">Nội dung không phù hợp</option>
+            <option value="2">Thông tin sai lệch</option>
+            <option value="3">Khác</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Mô tả thêm</span>
+          <textarea name="description" rows="3" maxlength="500" placeholder="Mô tả chi tiết vấn đề (không bắt buộc)"></textarea>
+        </label>
+        <button class="btn btn-danger btn-block" type="submit">Gửi báo cáo</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ AUTH MODAL ============ -->
+  <div id="authModal" class="modal" aria-hidden="true">
+    <div class="modal-card modal-sm" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button class="modal-close" type="button" data-close aria-label="Đóng">&times;</button>
+      <h2 id="authTitle">Chào mừng trở lại</h2>
+      <div class="tab-switch" role="tablist">
+        <button class="tab is-active" type="button" data-auth-tab="login" role="tab">Đăng nhập</button>
+        <button class="tab" type="button" data-auth-tab="register" role="tab">Đăng ký</button>
+      </div>
+
+      <form class="auth-form" data-auth-form="login">
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" required autocomplete="email" placeholder="sinhvien@uit.edu.vn" />
+        </label>
+        <label class="field">
+          <span>Mật khẩu</span>
+          <input type="password" name="password" required autocomplete="current-password" placeholder="••••••" />
+        </label>
+        <button class="btn btn-primary btn-block" type="submit">Đăng nhập</button>
+        <div class="demo-accounts">
+          <span class="muted small">Tài khoản mẫu:</span>
+          <button type="button" class="chip" data-demo="student">Sinh viên</button>
+          <button type="button" class="chip" data-demo="admin">Admin</button>
+        </div>
+      </form>
+
+      <form class="auth-form hidden" data-auth-form="register">
+        <label class="field">
+          <span>Tên hiển thị</span>
+          <input name="displayName" required maxlength="100" placeholder="VD: Minh Hoàng" />
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" required autocomplete="email" placeholder="ban@example.com" />
+        </label>
+        <label class="field">
+          <span>Mật khẩu</span>
+          <input type="password" name="password" required minlength="6" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự" />
+        </label>
+        <button class="btn btn-primary btn-block" type="submit">Tạo tài khoản</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/places.js"></script>
+  <script src="js/reviews.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
