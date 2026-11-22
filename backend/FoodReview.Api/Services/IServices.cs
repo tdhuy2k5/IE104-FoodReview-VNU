@@ -59,6 +59,7 @@ public interface IAdminService
 public interface IGeminiService
 {
     bool IsConfigured { get; }
+    string EmbeddingModel { get; }
     Task<float[]?> GetEmbeddingAsync(string text, CancellationToken ct = default);
     Task<string> GenerateAnswerAsync(string systemInstruction, string userPrompt, CancellationToken ct = default);
 }

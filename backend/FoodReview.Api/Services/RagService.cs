@@ -35,7 +35,7 @@ public class RagService : IRagService
         if (!_gemini.IsConfigured) return;
 
         using var conn = _dbFactory.CreateConnection();
-        var place = await conn.QueryFirstOrDefaultAsync<dynamic>(@"
+        var place = await conn.QueryFirstOrDefaultAsync<PlaceEmbeddingRow>(@"
             SELECT p.Id, p.Name, p.Description, p.Address, p.PriceMin, p.PriceMax, p.OpeningHours, p.Status,
                    a.Name AS AreaName, c.Name AS CategoryName
             FROM Places p
@@ -43,7 +43,7 @@ public class RagService : IRagService
             JOIN Categories c ON p.CategoryId = c.Id
             WHERE p.Id = @Id", new { Id = placeId });
 
-        if (place is null || (int)place!.Status != 1)
+        if (place is null || place.Status != 1)
         {
             await conn.ExecuteAsync("DELETE FROM PlaceEmbeddings WHERE PlaceId = @Id", new { Id = placeId });
             return;
@@ -52,19 +52,20 @@ public class RagService : IRagService
         var menuItems = (await conn.QueryAsync<MenuItemDto>(
             "SELECT Id, Name, Price, Note FROM MenuItems WHERE PlaceId = @Id", new { Id = placeId })).AsList();
 
-        var chunkText = BuildPlaceChunk(place, menuItems);
+        var chunkText = $"title: {place.Name} | text: {BuildPlaceChunk(place, menuItems)}";
         var vector = await _gemini.GetEmbeddingAsync(chunkText, ct);
-        if (vector == null) return;
+        if (vector == null) throw new InvalidOperationException("Gemini không trả embedding hợp lệ cho địa điểm.");
 
         var vectorLiteral = FormatVectorLiteral(vector);
         await conn.ExecuteAsync(@"
-            INSERT INTO PlaceEmbeddings (PlaceId, ContentText, Embedding, UpdatedAt)
-            VALUES (@PlaceId, @ContentText, CAST(@Vector AS vector), CURRENT_TIMESTAMP)
+            INSERT INTO PlaceEmbeddings (PlaceId, ContentText, Embedding, Model, UpdatedAt)
+            VALUES (@PlaceId, @ContentText, CAST(@Vector AS vector), @Model, CURRENT_TIMESTAMP)
             ON CONFLICT (PlaceId) DO UPDATE
             SET ContentText = EXCLUDED.ContentText,
                 Embedding = EXCLUDED.Embedding,
+                Model = EXCLUDED.Model,
                 UpdatedAt = CURRENT_TIMESTAMP",
-            new { PlaceId = placeId, ContentText = chunkText, Vector = vectorLiteral });
+            new { PlaceId = placeId, ContentText = chunkText, Vector = vectorLiteral, Model = _gemini.EmbeddingModel });
     }
 
     public async Task SyncReviewEmbeddingAsync(int reviewId, CancellationToken ct = default)
@@ -72,36 +73,39 @@ public class RagService : IRagService
         if (!_gemini.IsConfigured) return;
 
         using var conn = _dbFactory.CreateConnection();
-        var review = await conn.QueryFirstOrDefaultAsync<dynamic>(@"
+        var review = await conn.QueryFirstOrDefaultAsync<ReviewEmbeddingRow>(@"
             SELECT r.Id, r.PlaceId, r.Rating, r.Content, r.Status, p.Name AS PlaceName
             FROM Reviews r
             JOIN Places p ON r.PlaceId = p.Id
             WHERE r.Id = @Id", new { Id = reviewId });
 
-        if (review is null || (int)review!.Status != 1)
+        if (review is null || review.Status != 1)
         {
             await conn.ExecuteAsync("DELETE FROM ReviewEmbeddings WHERE ReviewId = @Id", new { Id = reviewId });
             return;
         }
 
-        var chunkText = BuildReviewChunk((string)review!.PlaceName, (int)review.Rating, (string)review.Content);
+        var placeName = review.PlaceName;
+        var chunkText = $"title: {placeName} | text: {BuildReviewChunk(placeName, review.Rating, review.Content)}";
         var vector = await _gemini.GetEmbeddingAsync(chunkText, ct);
-        if (vector == null) return;
+        if (vector == null) throw new InvalidOperationException("Gemini không trả embedding hợp lệ cho đánh giá.");
 
         var vectorLiteral = FormatVectorLiteral(vector);
         await conn.ExecuteAsync(@"
-            INSERT INTO ReviewEmbeddings (ReviewId, PlaceId, ContentText, Embedding, UpdatedAt)
-            VALUES (@ReviewId, @PlaceId, @ContentText, CAST(@Vector AS vector), CURRENT_TIMESTAMP)
+            INSERT INTO ReviewEmbeddings (ReviewId, PlaceId, ContentText, Embedding, Model, UpdatedAt)
+            VALUES (@ReviewId, @PlaceId, @ContentText, CAST(@Vector AS vector), @Model, CURRENT_TIMESTAMP)
             ON CONFLICT (ReviewId) DO UPDATE
             SET ContentText = EXCLUDED.ContentText,
                 Embedding = EXCLUDED.Embedding,
+                Model = EXCLUDED.Model,
                 UpdatedAt = CURRENT_TIMESTAMP",
             new
             {
                 ReviewId = reviewId,
-                PlaceId = (int)review.PlaceId,
+                PlaceId = review.PlaceId,
                 ContentText = chunkText,
-                Vector = vectorLiteral
+                Vector = vectorLiteral,
+                Model = _gemini.EmbeddingModel
             });
     }
 
@@ -118,14 +122,16 @@ public class RagService : IRagService
             SELECT p.Id
             FROM Places p
             LEFT JOIN PlaceEmbeddings pe ON p.Id = pe.PlaceId
-            WHERE p.Status = 1 AND (pe.PlaceId IS NULL OR p.UpdatedAt > pe.UpdatedAt)")).AsList();
+            WHERE p.Status = 1 AND (pe.PlaceId IS NULL OR p.UpdatedAt > pe.UpdatedAt OR pe.Model IS DISTINCT FROM @Model)",
+            new { Model = _gemini.EmbeddingModel })).AsList();
 
         var pendingReviewIds = (await conn.QueryAsync<int>(@"
             SELECT r.Id
             FROM Reviews r
             JOIN Places p ON r.PlaceId = p.Id
             LEFT JOIN ReviewEmbeddings re ON r.Id = re.ReviewId
-            WHERE r.Status = 1 AND p.Status = 1 AND (re.ReviewId IS NULL OR r.UpdatedAt > re.UpdatedAt)")).AsList();
+            WHERE r.Status = 1 AND p.Status = 1 AND (re.ReviewId IS NULL OR r.UpdatedAt > re.UpdatedAt OR re.Model IS DISTINCT FROM @Model)",
+            new { Model = _gemini.EmbeddingModel })).AsList();
 
         int placesSynced = 0, reviewsSynced = 0, failed = 0;
 
@@ -165,9 +171,9 @@ public class RagService : IRagService
         string query, double? userLat = null, double? userLng = null, int topK = 5, CancellationToken ct = default)
     {
         using var conn = _dbFactory.CreateConnection();
-        var queryVector = await _gemini.GetEmbeddingAsync(query, ct);
+        var queryVector = await _gemini.GetEmbeddingAsync($"task: search result | query: {query}", ct);
 
-        List<dynamic> matchedRows;
+        List<SemanticSearchRow> matchedRows;
 
         if (queryVector != null)
         {
@@ -203,7 +209,7 @@ public class RagService : IRagService
                 ORDER BY agg.BestScore DESC
                 LIMIT @TopK";
 
-            matchedRows = (await conn.QueryAsync<dynamic>(sql, new
+            matchedRows = (await conn.QueryAsync<SemanticSearchRow>(sql, new
             {
                 Vector = vectorLiteral,
                 MinSimilarity = MinSimilarityThreshold,
@@ -233,7 +239,7 @@ public class RagService : IRagService
                 ORDER BY AverageRating DESC
                 LIMIT @TopK";
 
-            matchedRows = (await conn.QueryAsync<dynamic>(fallbackSql, new
+            matchedRows = (await conn.QueryAsync<SemanticSearchRow>(fallbackSql, new
             {
                 Keyword = $"%{query.Trim()}%",
                 TopK = topK
@@ -243,9 +249,9 @@ public class RagService : IRagService
         var results = new List<SemanticPlaceResult>();
         foreach (var row in matchedRows)
         {
-            int placeId = (int)row.PlaceId;
-            double? lat = (double?)row.Latitude;
-            double? lng = (double?)row.Longitude;
+            int placeId = row.PlaceId;
+            double? lat = row.Latitude;
+            double? lng = row.Longitude;
 
             var reviews = (await conn.QueryAsync<string>(@"
                 SELECT Content || ' (' || Rating || '★)'
@@ -257,20 +263,20 @@ public class RagService : IRagService
             results.Add(new SemanticPlaceResult
             {
                 PlaceId = placeId,
-                Name = (string)row.Name,
-                Slug = (string)row.Slug,
-                Address = (string)row.Address,
-                AreaName = (string)row.AreaName,
-                CategoryName = (string)row.CategoryName,
-                PriceMin = (decimal)row.PriceMin,
-                PriceMax = (decimal)row.PriceMax,
-                AverageRating = (double)row.AverageRating,
+                Name = row.Name,
+                Slug = row.Slug,
+                Address = row.Address,
+                AreaName = row.AreaName,
+                CategoryName = row.CategoryName,
+                PriceMin = row.PriceMin,
+                PriceMax = row.PriceMax,
+                AverageRating = row.AverageRating,
                 Latitude = lat,
                 Longitude = lng,
                 DistanceKm = GeoHelper.CalculateDistanceKm(userLat, userLng, lat, lng),
                 GoogleMapsUrl = GeoHelper.BuildGoogleMapsUrl(lat, lng, (string)row.Name),
-                SimilarityScore = Math.Round((double)row.SimilarityScore, 4),
-                MatchedContext = (string)row.MatchedContext,
+                SimilarityScore = Math.Round(row.SimilarityScore, 4),
+                MatchedContext = row.MatchedContext,
                 HighlightReviews = reviews
             });
         }
@@ -351,7 +357,7 @@ public class RagService : IRagService
         return new ChatResponse(reply, candidates, true);
     }
 
-    private static string BuildPlaceChunk(dynamic place, List<MenuItemDto> menuItems)
+    private static string BuildPlaceChunk(PlaceEmbeddingRow place, List<MenuItemDto> menuItems)
     {
         var menuText = menuItems.Count > 0
             ? string.Join(", ", menuItems.Select(m => $"{m.Name} ({m.Price:N0}đ{(string.IsNullOrWhiteSpace(m.Note) ? "" : $" - {m.Note}")})"))
@@ -362,7 +368,7 @@ public class RagService : IRagService
             Loại hình: {place.CategoryName}
             Khu vực: {place.AreaName}
             Địa chỉ: {place.Address}
-            Khoảng giá: {(decimal)place.PriceMin:N0}đ - {(decimal)place.PriceMax:N0}đ
+            Khoảng giá: {place.PriceMin:N0}đ - {place.PriceMax:N0}đ
             Giờ mở cửa: {place.OpeningHours}
             Thực đơn nổi bật: {menuText}
             Mô tả: {place.Description}
@@ -386,4 +392,39 @@ public class RagService : IRagService
         sb.Append(']');
         return sb.ToString();
     }
+
+    private sealed record PlaceEmbeddingRow(
+        int Id,
+        string Name,
+        string? Description,
+        string Address,
+        decimal PriceMin,
+        decimal PriceMax,
+        string? OpeningHours,
+        short Status,
+        string AreaName,
+        string CategoryName);
+
+    private sealed record ReviewEmbeddingRow(
+        int Id,
+        int PlaceId,
+        short Rating,
+        string Content,
+        short Status,
+        string PlaceName);
+
+    private sealed record SemanticSearchRow(
+        int PlaceId,
+        string Name,
+        string Slug,
+        string Address,
+        string AreaName,
+        string CategoryName,
+        decimal PriceMin,
+        decimal PriceMax,
+        double? Latitude,
+        double? Longitude,
+        double AverageRating,
+        string MatchedContext,
+        double SimilarityScore);
 }

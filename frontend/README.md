@@ -1,6 +1,6 @@
 # Foodie Review · React frontend
 
-Frontend React + TypeScript + Vite, kế thừa màu xanh đậm/nền kem, font Noto Serif/Plus Jakarta Sans và các màn hình của Google Stitch. Backend và database không được chỉnh sửa hoặc khởi chạy trong quá trình chuyển đổi.
+Frontend React + TypeScript + Vite, kế thừa màu xanh đậm/nền kem, font Noto Serif/Plus Jakarta Sans và các màn hình của Google Stitch. Giao diện kết nối REST API hiện tại, bao gồm trợ lý AI và thông tin Google Maps từ DTO địa điểm.
 
 ## Chạy tại máy
 
@@ -19,7 +19,8 @@ Frontend hiển thị lỗi kết nối cùng nút thử lại khi API chưa s�
 ## Phạm vi đã triển khai
 
 - Trang chủ và trang địa điểm: tìm kiếm bằng Enter/nút Tìm, danh mục và khu vực từ API, bộ lọc ngân sách, sắp xếp, phân trang từ server; state nằm trong URL.
-- Chi tiết quán theo slug: dữ liệu thật, menu, khoảng giá, địa chỉ, giờ mở cửa, link chỉ đường; không tự suy ra trạng thái đang mở cửa.
+- Chi tiết quán theo slug: dữ liệu thật, menu, khoảng giá, địa chỉ, giờ mở cửa, link chỉ đường từ tọa độ; bản đồ nhúng là tùy chọn và cần Maps Embed API key.
+- Trợ lý ẩm thực ở mọi trang: gửi câu hỏi đến `POST /api/chat`, hiển thị trả lời và các quán được truy xuất, review nổi bật, khoảng giá/điểm/khoảng cách cùng link Google Maps. Chia sẻ vị trí chỉ xảy ra sau khi người dùng bấm nút và chấp thuận quyền trình duyệt.
 - Đăng ký, đăng nhập, hồ sơ, thay avatar, đăng xuất; token chỉ giữ trong bộ nhớ của tab. Tải lại trang cần đăng nhập lại. Không có refresh token hoặc API thu hồi token ở Backend hiện tại.
 - Lưu/bỏ lưu quán được đồng bộ giữa các trang, khóa request trùng và xử lý lỗi. Không tự retry API toggle.
 - Review: chọn điểm nguyên 1–5, nội dung tối đa 2.000 ký tự, tối đa 5 ảnh theo giới hạn UI. Upload từng ảnh JPG/PNG/WebP ≤5 MB rồi gửi URL. Sửa/xóa review chính chủ, báo cáo review với lý do.
@@ -43,8 +44,16 @@ Lớp service nằm ở `src/services`, DTO nằm ở `src/types/api.ts`. Không
 | Review | `GET/POST /api/reviews/place/{placeId}`, `GET /api/reviews/my`, `PUT/DELETE /api/reviews/{id}` |
 | Báo cáo | `POST /api/reviews/{id}/report` |
 | Upload | `POST /api/upload?folder=images`, multipart field `file` |
+| Tìm kiếm AI / chatbot | `POST /api/chat`, `GET /api/chat/search`; đồng bộ vector: `POST /api/chat/sync` (Admin) |
 
 Danh sách quán sử dụng `Search`, `AreaId`, `CategoryId`, `MinPrice`, `MaxPrice`, `SortBy`, `PageIndex`, `PageSize`. Review dùng `page`, `pageSize`. Response bọc bởi `success/message/data`; enum được ánh xạ theo số. HTTP client xử lý cả ProblemDetails và lỗi proxy không phải JSON. URL ảnh `/uploads/...` được phân giải theo origin API. `VITE_` là biến công khai trong bundle; không đặt khóa bí mật tại đây.
+
+### Gemini và Google Maps
+
+- Gemini API key chỉ cấu hình ở Backend qua `Gemini__ApiKey` hoặc `GEMINI_API_KEY` trong Docker Compose. Khi key có mặt, API đồng bộ các embedding còn thiếu hoặc thuộc model cũ lúc khởi động; không có MCP server trong repository hiện tại.
+- Nếu chưa có Gemini key, chatbot vẫn có thể trả kết quả từ fallback tìm kiếm từ khóa, nhưng không sinh câu trả lời Gemini hoặc dùng semantic vector search.
+- `VITE_GOOGLE_MAPS_EMBED_API_KEY` chỉ dùng để nhúng bản đồ trong trang chi tiết; link directions từ tọa độ không yêu cầu key. Key nhúng là public nên cần giới hạn website/referrer và API trong Google Cloud.
+- Backend lưu tọa độ latitude/longitude trên quán rồi dựng Maps URL từ tọa độ khi trả response; database không lưu một trường URL Maps riêng.
 
 ## Những phần chưa thể tích hợp
 
@@ -54,7 +63,7 @@ Giữ màn hình và thể hiện trạng thái chưa khả dụng, không hiể
 - Lượt hữu ích, bình luận dưới review, xác minh sinh viên.
 - Lịch sử báo cáo của người dùng.
 - Liên hệ/đề xuất quán; email/văn phòng hỗ trợ và chính sách chính thức chưa được xác minh.
-- Bản đồ nhiều quán: API danh sách chưa có tọa độ. Có sơ đồ minh họa và chỉ đường tại chi tiết từng quán.
+- Bản đồ khám phá nhiều ghim: trang khám phá hiện chưa có bản đồ tương tác; trang chi tiết có link chỉ đường, còn bản đồ nhúng tùy chọn theo API key.
 
 Các vấn đề Backend đã phát hiện và chỉ báo cáo:
 

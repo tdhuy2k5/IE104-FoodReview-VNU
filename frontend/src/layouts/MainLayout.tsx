@@ -5,6 +5,7 @@ import { useFavorites } from "../contexts/FavoritesContext";
 import { useToast } from "../contexts/ToastContext";
 import { Icon } from "../components/common/Icon";
 import { Brand } from "../components/common/Brand";
+import { FoodAssistant } from "../components/common/FoodAssistant";
 const links = [
   ["/", "Trang chủ"],
   ["/cong-dong", "Cộng đồng"],
@@ -161,6 +162,7 @@ export function MainLayout() {
           <span>Giá và giờ mở cửa là thông tin tham khảo.</span>
         </div>
       </footer>
+      <FoodAssistant />
     </>
   );
 }

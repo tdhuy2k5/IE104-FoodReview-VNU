@@ -109,6 +109,10 @@ export function PlaceDetailPage() {
     place.latitude != null && place.longitude != null
       ? `${place.latitude},${place.longitude}`
       : place.address;
+  const mapsEmbedKey = import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY?.trim();
+  const mapsEmbedUrl = mapsEmbedKey
+    ? `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(mapsEmbedKey)}&q=${encodeURIComponent(destination)}`
+    : null;
   const from = safeReturnTo(
     typeof location.state?.from === "string" ? location.state.from : null,
   );
@@ -258,13 +262,18 @@ export function PlaceDetailPage() {
           </div>
           <a
             className="button primary"
-            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`}
+            href={place.googleMapsUrl || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`}
             target="_blank"
             rel="noopener noreferrer"
           >
-            Mở chỉ đường
+            Mở Google Maps
             <Icon name="arrow" size={17} />
           </a>
+          {mapsEmbedUrl ? (
+            <iframe className="place-map-embed" title={`Bản đồ vị trí ${place.name}`} src={mapsEmbedUrl} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />
+          ) : (
+            <p className="map-embed-note">Bản đồ nhúng cần Maps Embed API key; link chỉ đường dùng tọa độ đã lưu của quán.</p>
+          )}
           <p className="sidebar-note">
             Giá và giờ mở cửa có thể thay đổi. Bạn nên kiểm tra thông tin trước
             khi ghé.

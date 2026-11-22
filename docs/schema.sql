@@ -127,13 +127,15 @@ CREATE TABLE IF NOT EXISTS Favorites (
 -- =====================================================================
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- Vector thông tin tổng hợp quán ăn + thực đơn (768 chiều cho Gemini text-embedding-004)
+-- Vector thông tin quán ăn + thực đơn (768 chiều cho Gemini Embedding 2)
 CREATE TABLE IF NOT EXISTS PlaceEmbeddings (
     PlaceId INT PRIMARY KEY REFERENCES Places(Id) ON DELETE CASCADE,
     ContentText TEXT NOT NULL,
     Embedding vector(768) NOT NULL,
+    Model VARCHAR(100) NOT NULL DEFAULT '',
     UpdatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE PlaceEmbeddings ADD COLUMN IF NOT EXISTS Model VARCHAR(100) NOT NULL DEFAULT '';
 
 CREATE INDEX IF NOT EXISTS idx_placeembeddings_hnsw
     ON PlaceEmbeddings USING hnsw (Embedding vector_cosine_ops);
@@ -144,8 +146,10 @@ CREATE TABLE IF NOT EXISTS ReviewEmbeddings (
     PlaceId INT NOT NULL REFERENCES Places(Id) ON DELETE CASCADE,
     ContentText TEXT NOT NULL,
     Embedding vector(768) NOT NULL,
+    Model VARCHAR(100) NOT NULL DEFAULT '',
     UpdatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE ReviewEmbeddings ADD COLUMN IF NOT EXISTS Model VARCHAR(100) NOT NULL DEFAULT '';
 
 CREATE INDEX IF NOT EXISTS idx_reviewembeddings_hnsw
     ON ReviewEmbeddings USING hnsw (Embedding vector_cosine_ops);

@@ -1,119 +1,82 @@
-# Food Review - Làng Đại học (ĐHQG TP.HCM)
+# Food Review — Làng Đại học
 
-> **Đồ án môn học:** IE104 - Thiết kế Giao diện Người dùng  
-> **Chủ đề:** Website Review & Khám phá địa điểm ăn uống quanh Làng Đại học (ĐHQG-HCM)
+> Đồ án môn IE104 — Internet và Công nghệ Web, Trường Đại học Công nghệ Thông tin, ĐHQG-HCM.
 
----
+Nền tảng khám phá và đánh giá quán ăn quanh Làng Đại học. Người dùng có thể lọc quán theo khu vực, loại món và khoảng giá; xem thông tin, đánh giá và chỉ đường; trợ lý AI hỗ trợ tìm quán bằng câu hỏi tự nhiên dựa trên dữ liệu của dự án.
 
-## Giới thiệu Dự án
+## Công nghệ và kiến trúc
 
-**Food Review - Làng Đại học** là nền tảng thông tin và cộng đồng đánh giá địa điểm ăn uống dành riêng cho sinh viên và cư dân tại khu vực Làng Đại học Quốc gia TP.HCM.
+- **Frontend:** React 19, TypeScript, Vite; SPA gọi REST API qua `/api`.
+- **Backend:** ASP.NET Core 9 Web API, Dapper, JWT; Swagger tại `/swagger` khi chạy môi trường Development.
+- **Database:** PostgreSQL 16 với pgvector; schema nguồn ở `docs/schema.sql`, được áp dụng khi API khởi động.
+- **AI/RAG:** Gemini API tạo embedding và câu trả lời; tìm kiếm vector quán/review trong PostgreSQL rồi đưa ngữ cảnh truy xuất vào câu trả lời.
+- **Bản đồ:** lưu `Latitude` và `Longitude` trên bản ghi quán; backend tính khoảng cách Haversine khi có vị trí người dùng và tạo Google Maps directions URL. Website có thể bật bản đồ nhúng tùy chọn bằng Maps Embed API key.
+- **Triển khai phát triển:** Docker Compose chạy PostgreSQL và API; Vite chạy frontend độc lập.
 
-Hệ thống tập trung giải quyết 3 câu hỏi thiết thực:
-1. *Ăn ở đâu?* (Tìm theo khu vực KTX A, KTX B, Chợ Đêm, Dốc Quốc Tế...)
-2. *Giá khoảng bao nhiêu?* (Lọc theo ngân sách sinh viên)
-3. *Người trải nghiệm trước nhận xét thế nào?* (Đánh giá thực tế kèm hình ảnh món ăn)
+Luồng chatbot: câu hỏi (và tùy chọn tọa độ do người dùng chủ động chia sẻ) → embedding Gemini → truy xuất pgvector và review công khai → Gemini sinh câu trả lời theo ngữ cảnh → giao diện hiển thị gợi ý quán, giá, điểm, review nổi bật, khoảng cách và link chỉ đường. Nếu chưa có Gemini API key, API chuyển sang tìm kiếm từ khóa cơ bản; tính năng tìm đường bằng link vẫn hoạt động từ tọa độ đã lưu.
 
----
+## Bố cục repository
 
-## Kiến trúc Công nghệ (Backend)
-
-- **Platform:** .NET 9 SDK (C# 13)
-- **Framework:** ASP.NET Core Web API
-- **Data Access Layer:** Dapper Micro-ORM (Raw SQL & Dynamic Parameters)
-- **Database Engine:** PostgreSQL 16
-- **Containerization:** Docker & Docker Compose
-- **Bảo mật & Phân quyền:** JWT Bearer Authentication, BCrypt Password Hashing, Role-Based Access Control (Admin, User)
-- **Tài liệu API:** Swagger / OpenAPI UI (`/swagger`)
-
----
-
-## Cấu trúc Thư mục
-
-```
-IE104-FoodReview-VNU/
-├── docs/                                  # Tài liệu kiến trúc & đặc tả
-│   ├── prd.md                             # Yêu cầu sản phẩm (PRD)
-│   ├── ARCHITECTURE-SPINE.md              # Thiết kế kiến trúc & ERD
-│   ├── DATA_COLLECTION_GUIDE.md           # Hướng dẫn thu thập dữ liệu & hình ảnh
-│   └── schema.sql                         # PostgreSQL Single Source of Truth DDL
-├── backend/                               # Mã nguồn Backend
-│   └── FoodReview.Api/                    # ASP.NET Core 9 Web API
-│       ├── Controllers/                   # RESTful API Endpoints
-│       ├── Models/                        # Domain Entities
-│       ├── DTOs/                          # Request / Response Models
-│       ├── Services/                      # Business Logic (Dapper)
-│       ├── Data/                          # Connection Factory & Seed Data
-│       ├── Dockerfile                     # Multi-stage Docker build
-│       └── Program.cs                     # Startup Pipeline
-├── frontend/                              # Frontend thử nghiệm API (HTML/CSS/JS thuần)
-│   ├── index.html
-│   ├── css/styles.css
-│   ├── js/                                # config, api, auth, places, reviews, admin
-│   └── README.md                          # Hướng dẫn chạy & danh sách API đã nối
-├── docker-compose.yml                     # Cấu hình container API + PostgreSQL
-├── .dockerignore
-├── GEMINI.md                              # Quy chuẩn pair-programming
-└── README.md
+```text
+backend/FoodReview.Api/   ASP.NET Core API, controllers, DTOs, services, schema.sql
+frontend/                 React + TypeScript SPA
+docs/schema.sql           PostgreSQL schema, seed/migration-safe DDL và pgvector tables
+docs/                     Đặc tả, kiến trúc, hướng dẫn thu thập dữ liệu
+docker-compose.yml        PostgreSQL + API
 ```
 
----
+## Chạy dự án
 
-## Hướng dẫn Cài đặt & Khởi chạy
+### 1. API và PostgreSQL
 
-### Cách 1: Chạy bằng Docker Compose (Khuyên dùng)
+Cần Docker Desktop đang chạy. Mỗi thành viên muốn bật chatbot Gemini cần tự tạo API key trong Google AI Studio. Key không nằm trong Git; không gửi key riêng của bạn cho nhóm và không commit file `.env`.
 
-Yêu cầu máy đã cài đặt và bật [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-
-```bash
-# Khởi chạy toàn bộ hệ thống (PostgreSQL 16 + Web API)
-docker compose up --build
+```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+notepad .env
 ```
 
-- **Swagger UI:** `http://localhost:5000/swagger`
-- **PostgreSQL Server:** `localhost:5432` (Database: `foodreview`, User: `foodreview_user`)
+Trong `.env`, điền key của bạn vào biến `GEMINI_API_KEY`, lưu file, rồi chạy tại thư mục gốc:
 
-Tài khoản thử nghiệm sẵn có:
-- **Admin:** `admin@langdaihoc.vn` / `Admin@123`
-- **Sinh viên:** `sinhvien@uit.edu.vn` / `Student@123`
+```powershell
+docker compose up --build -d
+```
 
----
+- API/Swagger: `http://localhost:5000/swagger`
+- PostgreSQL: `localhost:5432` (database `foodreview`)
 
-## 🖥️ Frontend thử nghiệm API
+Nếu không đặt `GEMINI_API_KEY`, API vẫn chạy và chatbot dùng tìm kiếm từ khóa dự phòng. Khi có key, API tự đồng bộ embedding cho dữ liệu quán/review còn thiếu hoặc chưa dùng embedding model hiện tại lúc khởi động. Endpoint quản trị `POST /api/chat/sync` cũng có thể dùng để đồng bộ thủ công.
 
-Thư mục `frontend/` chứa giao diện HTML + CSS + JavaScript thuần (không cần build) để thử toàn bộ API: đăng nhập, khám phá/lọc quán, chi tiết, yêu thích, đánh giá kèm upload ảnh và bảng quản trị.
+### 2. Frontend React
 
-```bash
-# Cách A — chạy backend bằng Docker (PostgreSQL + API, cổng 5000)
-docker compose up --build
-
-# Cách B — chạy backend trực tiếp bằng .NET (cổng 5114, cần PostgreSQL)
-cd backend/FoodReview.Api
-dotnet run
-
-# Terminal khác — static server cho frontend
+```powershell
 cd frontend
-python -m http.server 5500
+if (-not (Test-Path .env.local)) { Copy-Item .env.example .env.local }
+notepad .env.local
+npm.cmd ci
+npm.cmd run dev
 ```
 
-Mở 👉 **`http://localhost:5500`**. Frontend tự dò backend giữa Docker (`http://localhost:5000`) và `dotnet run` (`http://localhost:5114`), nên không cần sửa cấu hình. Nếu backend chạy ở cổng khác, đặt `API_BASE_URL` trong `frontend/js/config.js` hoặc thêm cổng vào `API_PORTS`.
+Trong `frontend/.env.local`, đặt `API_PROXY_TARGET=http://localhost:5000` để frontend gửi yêu cầu đến API chạy bằng Docker. Mở địa chỉ Vite in trong terminal (mặc định `http://127.0.0.1:5173`). Nếu API chạy bằng `dotnet run` thay vì Docker, dùng `http://localhost:5114`. Sau khi sửa file môi trường, khởi động lại Vite.
 
-Chi tiết cấu trúc và danh sách endpoint đã nối: [`frontend/README.md`](frontend/README.md).
-Lệnh dừng container:
-```bash
-docker compose down
-```
+Khi API khởi động với Gemini key, backend tự đồng bộ embedding cho quán và đánh giá có trong database. Nếu chưa có key, API vẫn chạy với tìm kiếm từ khóa dự phòng; link Google Maps không cần Gemini key. Không đặt Gemini key trong `frontend/.env.local` hoặc bất kỳ biến `VITE_*` nào.
 
----
+### Bản đồ nhúng (tùy chọn)
 
-### Dữ liệu mẫu (Seed Data)
+Link mở/chỉ đường Google Maps dùng tọa độ của quán và không cần Maps API key. Để hiện bản đồ nhúng ở trang chi tiết, bật **Maps Embed API**, tạo key riêng, giới hạn key cho Maps Embed API và website/referrer của frontend, rồi đặt `VITE_GOOGLE_MAPS_EMBED_API_KEY` trong `frontend/.env.local`. Đây là key công khai phía trình duyệt nên phải áp dụng giới hạn; không dùng Gemini key ở frontend.
 
-Hệ thống tự động nạp sẵn dữ liệu ban đầu khi khởi chạy:
+## Dữ liệu và RAG
 
-- **Tài khoản kiểm thử:**
-  - Quản trị viên (Admin): `admin@langdaihoc.vn` / Mật khẩu: `Admin@123`
-  - Sinh viên 1 (User): `sinhvien@uit.edu.vn` / Mật khẩu: `Student@123`
-  - Sinh viên 2 (User): `thuytien@hcmus.edu.vn` / Mật khẩu: `Student@123`
-- **Khu vực ẩm thực:** KTX Khu A, KTX Khu B, Chợ Đêm ĐHQG, Dốc ĐH Quốc Tế, Vành đai ĐHQG, Tân Lập.
-- **Danh mục món ăn:** Cơm Trưa / Cơm Tấm, Bún / Phở / Mì, Ăn Vặt & Xiên Nướng, Trà Sữa & Cà Phê, Lẩu & Nướng, Món Chay.
-- **Quán ăn mẫu:** Cơm Tấm Cây Bàng (KTX Khu B) và Bún Bò Huế O Oanh (KTX Khu A) kèm thực đơn và đánh giá mẫu.
+- `Places.Latitude` / `Places.Longitude` là tọa độ quán, không phải trường URL Google Maps. Link được tạo từ tọa độ khi trả DTO.
+- `PlaceEmbeddings` và `ReviewEmbeddings` lưu nội dung truy xuất, vector 768 chiều, model embedding và thời điểm đồng bộ.
+- Khi thay model embedding, tiến trình đồng bộ sẽ nhận diện model cũ và tạo lại vector.
+- Dữ liệu mẫu được nạp khi bảng tài khoản/khu vực/danh mục/quán tương ứng chưa có dữ liệu.
+- Form khảo sát đánh giá quán là kênh thu thập dữ liệu ngoài website; dữ liệu chỉ xuất hiện trong chatbot sau khi được đưa vào database và đồng bộ embedding.
+
+## Tài liệu liên quan
+
+- [Frontend React README](frontend/README.md)
+- [Kiến trúc hệ thống](docs/ARCHITECTURE-SPINE.md)
+- [Yêu cầu sản phẩm](docs/prd.md)
+- [Hướng dẫn thu thập dữ liệu](docs/DATA_COLLECTION_GUIDE.md)
+- [Schema PostgreSQL](docs/schema.sql)

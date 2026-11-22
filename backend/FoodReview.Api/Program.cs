@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using FoodReview.Api.Data;
 using FoodReview.Api.DTOs;
+using FoodReview.Api.Helpers;
 using FoodReview.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -168,5 +169,15 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapControllers();
+
+if (!string.IsNullOrWhiteSpace(app.Configuration["Gemini:ApiKey"]))
+{
+    var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+    app.Lifetime.ApplicationStarted.Register(() => RagBackgroundHelper.Enqueue(
+        scopeFactory,
+        app.Logger,
+        async rag => { await rag.SyncAllMissingAsync(); },
+        "đồng bộ RAG khi khởi động"));
+}
 
 app.Run();

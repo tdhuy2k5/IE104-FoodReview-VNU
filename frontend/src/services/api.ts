@@ -3,6 +3,7 @@ import type {
   Area,
   AuthResponse,
   Category,
+  ChatResponse,
   Paged,
   Place,
   PlaceDetail,
@@ -20,6 +21,11 @@ export const api = {
     params: Record<string, string | number | undefined>,
     signal?: AbortSignal,
   ) => request<Paged<Place>>(`/places?${query(params)}`, { signal }),
+  chat: (message: string, userLat?: number, userLng?: number) =>
+    request<ChatResponse>("/chat", {
+      method: "POST",
+      body: json({ message, userLat, userLng }),
+    }),
   place: (slug: string, signal?: AbortSignal) =>
     request<PlaceDetail>(`/places/slug/${encodeURIComponent(slug)}`, {
       signal,

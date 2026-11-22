@@ -41,13 +41,38 @@ export interface Place {
   averageRating: number;
   reviewCount: number;
   status: number;
-}
-export interface PlaceDetail extends Place {
   latitude?: number | null;
   longitude?: number | null;
+  distanceKm?: number | null;
+  googleMapsUrl?: string | null;
+}
+export interface PlaceDetail extends Place {
   isFavorite: boolean;
   menuItems: { id: number; name: string; price: number; note?: string }[];
   recentReviews: Review[];
+}
+export interface ChatPlace {
+  placeId: number;
+  name: string;
+  slug: string;
+  address: string;
+  areaName: string;
+  categoryName: string;
+  priceMin: number;
+  priceMax: number;
+  averageRating: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  distanceKm?: number | null;
+  googleMapsUrl?: string | null;
+  similarityScore: number;
+  matchedContext: string;
+  highlightReviews: string[];
+}
+export interface ChatResponse {
+  reply: string;
+  suggestedPlaces: ChatPlace[];
+  isGeminiConfigured: boolean;
 }
 export interface User {
   id: number;
