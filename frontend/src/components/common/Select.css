@@ -1,0 +1,48 @@
+.select-control { position: relative; min-width: 0; width: 100%; font-weight: 400; }
+.select-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; min-height: 48px; padding: 8px 10px 8px 14px;
+  border: 1px solid #d8decd; border-radius: 12px;
+  background: #fff; color: #183b30; text-align: left; font-size: 13px;
+  cursor: pointer; transition: border-color 150ms, background 150ms;
+}
+.select-trigger:hover:not(:disabled), .select-control[data-open="true"] .select-trigger {
+  border-color: #7c9470; background: #f8faf4;
+}
+.select-value { min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }
+.dropdown-chevron { display: block; transform: rotate(90deg); }
+.dropdown-arrow {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid transparent; color: #64765b; line-height: 1; font-size: 19px;
+  transition: background 150ms, border-color 150ms, transform 150ms;
+}
+.select-control[data-open="true"] .dropdown-arrow,
+.user-trigger[aria-expanded="true"] .dropdown-arrow {
+  background: #e5edda; border-color: #9aaf87; color: #183b30; transform: rotate(180deg);
+}
+.select-options {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 45;
+  max-height: 240px; overflow-y: auto; overscroll-behavior: contain;
+  padding: 6px; border: 1px solid #d8decd; border-radius: 14px;
+  box-shadow: 0 14px 35px #183b3020; background: #fff;
+}
+.select-option {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 9px 10px;
+  border: 1px solid transparent; border-radius: 9px;
+  color: #273b33; font-size: 13px; line-height: 1.5; cursor: pointer;
+}
+.select-option[data-active="true"] { background: #f1f5eb; border-color: #d8e2cb; }
+.select-option[aria-selected="true"] { color: #183b30; background: #e7efdd; border-color: #a4b891; }
+.select-check {
+  display: inline-grid; place-items: center; flex-shrink: 0;
+  width: 18px; height: 18px; border: 1px solid #a4b296; border-radius: 5px;
+  font-size: 12px; font-weight: 700; color: #fcfaf6;
+}
+.select-option[aria-selected="true"] .select-check { background: #183b30; border-color: #183b30; }
+.sort-select .select-control { width: 230px; }
+.sort-select .select-trigger, .sort-select .select-option { font-size: 11px; }
+@media (max-width: 600px) {
+  .sort-select .select-control { flex: 1; width: auto; max-width: 100%; }
+  .field .select-trigger, .field .select-option { font-size: 16px; }
+}

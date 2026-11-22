@@ -1,0 +1,177 @@
+{
+    "stitchSha256":  "191E9FC268B2CD5B905CCA5B1EE98A8EB8B90797F6A024AD7330E117A2C493F7",
+    "backend":  [
+                    {
+                        "sha256":  "817DB0BF2ECCA78364C41DBAF7949BF2504CF47A1C3D0D54F3BE8178FEFC030B",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\appsettings.Development.json"
+                    },
+                    {
+                        "sha256":  "29D61EBEA1EC74600E424A83BFE6B80641BEA6DAF636B63AEA6529423F71C7BA",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\appsettings.json"
+                    },
+                    {
+                        "sha256":  "DC2E991737A23DA36D8BC463AF4F5174A3DC0C58DF2D6C11F8E294D9A5E15CAA",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Dockerfile"
+                    },
+                    {
+                        "sha256":  "716D933C81D1C5582FE4E612948D14AB7212907AAE2B33A6D8101AF0FFCD91E5",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\FoodReview.Api.csproj"
+                    },
+                    {
+                        "sha256":  "9BB5EC6764BFBA9AAF3E50C3FF89788FA70866AC75FBC0F193EF75247407B370",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\FoodReview.Api.http"
+                    },
+                    {
+                        "sha256":  "54954C18CBCEBF2DDBE7CFDF8A2A917EB2E88B96B784C033355A450353107B3E",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Program.cs"
+                    },
+                    {
+                        "sha256":  "54831ECD78EED4F88AD8DB877B309FFB1974CDE85C26AB15A6DEFEB01ED75D08",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Controllers\\AdminController.cs"
+                    },
+                    {
+                        "sha256":  "61432BD6866C004AF65F02837E01CEB02CEA8693F3921F0688065F13AD50391A",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Controllers\\AreasController.cs"
+                    },
+                    {
+                        "sha256":  "A8ABB9098D6DC667B26904A8BB70B5CD49B8E2EE084F6E36F3D15924A6B20756",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Controllers\\AuthController.cs"
+                    },
+                    {
+                        "sha256":  "C4DD305796AC30E29171316EDF5EF64C48E916B3A0694E60A55C97B813F13EB9",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Controllers\\CategoriesController.cs"
+                    },
+                    {
+                        "sha256":  "75E922EFD02BFD91A5398C3794DB2B37438BE657E2B375CF97E97FB97AACE4EB",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Controllers\\FavoritesController.cs"
+                    },
+                    {
+                        "sha256":  "0681A8C7CCEC528175E6C588DDA9890BE01326B9C34F97EBBB74E6E221FD2DE9",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Controllers\\PlacesController.cs"
+                    },
+                    {
+                        "sha256":  "E01D29969ED37BA8C96DA786A2E5F62B24AA466EC0923F09546E08E5664C0735",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Controllers\\ReviewsController.cs"
+                    },
+                    {
+                        "sha256":  "21DC33F793EC4AC5CA1AFECC166EC8F4E2842962BF076463FA67413203A4564C",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Controllers\\UploadController.cs"
+                    },
+                    {
+                        "sha256":  "E908B56CAF307946CF3F72DF0AD8E98387AD39625A4E7DA22E14478CC364B5FB",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Data\\DbInitializer.cs"
+                    },
+                    {
+                        "sha256":  "CEFD9A2E02D37ACECDD95DF2CC9606B69D356D1EAD5BA48A4ED5199C6A6E4865",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Data\\IDbConnectionFactory.cs"
+                    },
+                    {
+                        "sha256":  "89B4BD7612848B17E0C4B238963165178746FE6C5DCA1ED7D2E0D1556E9C3B00",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Data\\QueryRows.cs"
+                    },
+                    {
+                        "sha256":  "06EBA4A39A86498741CE32D10478B77EFA255719AB0264B18C18F4EEB431897A",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\DTOs\\AreaCategoryDtos.cs"
+                    },
+                    {
+                        "sha256":  "087CD073A6ED385FCC85EE8308A59278EA1343AE04702EDD5137A28C15491E48",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\DTOs\\AuthDtos.cs"
+                    },
+                    {
+                        "sha256":  "575F86C556FA28480730619C12052E9F881EE8A7C16894AA9B7F71F997E42F68",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\DTOs\\CommonDtos.cs"
+                    },
+                    {
+                        "sha256":  "71AC13D9CC251833F37F1061EE474123707BD5675EA20D068CA094DB7BA86288",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\DTOs\\InteractionDtos.cs"
+                    },
+                    {
+                        "sha256":  "6494AE78F2CBF86478DCA71C5438685889438B00BD1BED9CFFBC02284AB34267",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\DTOs\\PlaceDtos.cs"
+                    },
+                    {
+                        "sha256":  "F35C57DEF6503277BB95C7DFF6565131E6ADFDBB17B77CABA26131BD0DEB0BC3",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\DTOs\\ReviewDtos.cs"
+                    },
+                    {
+                        "sha256":  "62D2E293B7932AE21CFAF3DDDC9A471CF075A63D3B679E71BA8F5846B4D49552",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Models\\Area.cs"
+                    },
+                    {
+                        "sha256":  "08E60780D4221FB7EE50D41C1E8127B9368A4E540D343DCC866E66CFA3E63FBF",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Models\\Category.cs"
+                    },
+                    {
+                        "sha256":  "41E5F8E088EDCC3404A61E3DF11393D4E581D9CD287A567BC4036FD269EDD348",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Models\\Enums.cs"
+                    },
+                    {
+                        "sha256":  "ECA26A6CB4410BA89E982F2EC0B76AF8D2116DBE0FD3AA21BB7BF04760B0670B",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Models\\Favorite.cs"
+                    },
+                    {
+                        "sha256":  "B506F229AB93B32AC97B2E7E943500DD6E7C34E6D1804E4FF5D83BBBE95858AC",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Models\\MenuItem.cs"
+                    },
+                    {
+                        "sha256":  "192229B65E6EED84E8F26B214805A5821DDC72ED98696894546F30AFE9A13367",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Models\\Place.cs"
+                    },
+                    {
+                        "sha256":  "D29C6ED39F430FC4277C08638400D21D7CDB732381A771309AA274C67A347695",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Models\\Report.cs"
+                    },
+                    {
+                        "sha256":  "8D42F0EB77C3604263D15FFBC822AEF864FE2271B84669FAF9BE0046CD54B042",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Models\\Review.cs"
+                    },
+                    {
+                        "sha256":  "AC9474C4E8E3E48A21601579BE234DB70B7CB4D523D03D5470F35E1EAEAD805E",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Models\\ReviewImage.cs"
+                    },
+                    {
+                        "sha256":  "FBD5B43BBA5D0C29A7A5C3024F6B2AB706924713FB83CDEF23CFCB2C2DAD5E33",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Models\\User.cs"
+                    },
+                    {
+                        "sha256":  "4B11CC7233C512C27FCAF713FE107E39C989214C8B0BA701C11D52C17CF2F82A",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Properties\\launchSettings.json"
+                    },
+                    {
+                        "sha256":  "AA6244F20AC22F9A3ED62488A559287F926BF4DF839F593155D0C7329B8C0E8B",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Services\\AdminService.cs"
+                    },
+                    {
+                        "sha256":  "69D086075A52A980EDC919B860C0EC78E65874B73FED3B04FBDFC3AB86A919B7",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Services\\AuthService.cs"
+                    },
+                    {
+                        "sha256":  "81E1E553FE84FA806918D14D51544241B7959EBB67CBE66C81345A6BB1F93A63",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Services\\CategoryAreaService.cs"
+                    },
+                    {
+                        "sha256":  "5A2D45A60A7E2DE9E2F512E0C4885BB075348DAD600F754DA01B199F9603F986",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Services\\InteractionService.cs"
+                    },
+                    {
+                        "sha256":  "62CCAF7561992C81D645B2721C636798DF3C6846F330BEE6746BB4B4E079F479",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Services\\IServices.cs"
+                    },
+                    {
+                        "sha256":  "3BA94726BF9BAA82E735D63614653F45A230FB1606B345A2D500AF98C530A372",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Services\\LocalFileStorageService.cs"
+                    },
+                    {
+                        "sha256":  "EFBCFD181AED45B5338C30AEF57213109C61056CB888506BE8230DB251021C0D",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Services\\PlaceService.cs"
+                    },
+                    {
+                        "sha256":  "C3F078414202281AFDB6D7EDB66F5C1746AF464F874F2F4333D03B5C74FE5933",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\Services\\ReviewService.cs"
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "path":  "D:\\Dowload\\IE104-FoodReview-VNU-main\\IE104-FoodReview-VNU-main\\backend\\FoodReview.Api\\wwwroot\\uploads\\.gitkeep"
+                    }
+                ]
+}
