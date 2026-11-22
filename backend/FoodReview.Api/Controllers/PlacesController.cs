@@ -30,16 +30,17 @@ public class PlacesController : ControllerBase
     }
 
     /// <summary>
-    /// Xem chi tiết quán ăn theo ID (kèm menu, danh sách review, trạng thái yêu thích)
+    /// Xem chi tiết quán ăn theo ID (kèm menu, danh sách review, trạng thái yêu thích, khoảng cách và link Google Maps)
     /// </summary>
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<ApiResponse<PlaceDetailDto>>> GetById(int id)
+    public async Task<ActionResult<ApiResponse<PlaceDetailDto>>> GetById(
+        int id, [FromQuery] double? userLat = null, [FromQuery] double? userLng = null)
     {
         int? userId = null;
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (int.TryParse(userIdStr, out var parsed)) userId = parsed;
 
-        var place = await _placeService.GetPlaceDetailAsync(id, userId);
+        var place = await _placeService.GetPlaceDetailAsync(id, userId, userLat, userLng);
         if (place == null)
         {
             return NotFound(new ApiResponse<PlaceDetailDto>(false, "Không tìm thấy địa điểm quán ăn."));
@@ -52,13 +53,14 @@ public class PlacesController : ControllerBase
     /// Xem chi tiết quán ăn theo URL Slug (ví dụ: com-tam-cay-bang)
     /// </summary>
     [HttpGet("slug/{slug}")]
-    public async Task<ActionResult<ApiResponse<PlaceDetailDto>>> GetBySlug(string slug)
+    public async Task<ActionResult<ApiResponse<PlaceDetailDto>>> GetBySlug(
+        string slug, [FromQuery] double? userLat = null, [FromQuery] double? userLng = null)
     {
         int? userId = null;
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (int.TryParse(userIdStr, out var parsed)) userId = parsed;
 
-        var place = await _placeService.GetPlaceDetailBySlugAsync(slug, userId);
+        var place = await _placeService.GetPlaceDetailBySlugAsync(slug, userId, userLat, userLng);
         if (place == null)
         {
             return NotFound(new ApiResponse<PlaceDetailDto>(false, "Không tìm thấy địa điểm quán ăn."));

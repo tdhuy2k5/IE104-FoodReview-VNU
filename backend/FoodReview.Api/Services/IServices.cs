@@ -23,8 +23,8 @@ public interface ICategoryAreaService
 public interface IPlaceService
 {
     Task<PagedResult<PlaceSummaryDto>> GetPlacesAsync(PlaceFilterParams filter);
-    Task<PlaceDetailDto?> GetPlaceDetailAsync(int id, int? currentUserId = null);
-    Task<PlaceDetailDto?> GetPlaceDetailBySlugAsync(string slug, int? currentUserId = null);
+    Task<PlaceDetailDto?> GetPlaceDetailAsync(int id, int? currentUserId = null, double? userLat = null, double? userLng = null);
+    Task<PlaceDetailDto?> GetPlaceDetailBySlugAsync(string slug, int? currentUserId = null, double? userLat = null, double? userLng = null);
     Task<PlaceDetailDto> CreatePlaceAsync(CreatePlaceRequest request);
     Task<PlaceDetailDto> UpdatePlaceAsync(int id, UpdatePlaceRequest request);
     Task<bool> DeletePlaceAsync(int id);
@@ -54,5 +54,21 @@ public interface IAdminService
     Task<bool> ToggleUserBanStatusAsync(int userId);
     Task<List<PlaceSummaryDto>> GetAllPlacesForAdminAsync();
     Task<bool> ToggleReviewVisibilityAsync(int reviewId, ReviewStatus newStatus);
+}
+
+public interface IGeminiService
+{
+    bool IsConfigured { get; }
+    Task<float[]?> GetEmbeddingAsync(string text, CancellationToken ct = default);
+    Task<string> GenerateAnswerAsync(string systemInstruction, string userPrompt, CancellationToken ct = default);
+}
+
+public interface IRagService
+{
+    Task SyncPlaceEmbeddingAsync(int placeId, CancellationToken ct = default);
+    Task SyncReviewEmbeddingAsync(int reviewId, CancellationToken ct = default);
+    Task<RagSyncResult> SyncAllMissingAsync(CancellationToken ct = default);
+    Task<List<SemanticPlaceResult>> SearchSemanticAsync(string query, double? userLat = null, double? userLng = null, int topK = 5, CancellationToken ct = default);
+    Task<ChatResponse> AskAsync(ChatRequest request, CancellationToken ct = default);
 }
 

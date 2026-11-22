@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Dapper;
 using FoodReview.Api.Data;
 using FoodReview.Api.DTOs;
+using FoodReview.Api.Helpers;
 using FoodReview.Api.Models;
 
 namespace FoodReview.Api.Services;
@@ -10,10 +11,14 @@ namespace FoodReview.Api.Services;
 public class PlaceService : IPlaceService
 {
     private readonly IDbConnectionFactory _dbFactory;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<PlaceService> _logger;
 
-    public PlaceService(IDbConnectionFactory dbFactory)
+    public PlaceService(IDbConnectionFactory dbFactory, IServiceScopeFactory scopeFactory, ILogger<PlaceService> logger)
     {
         _dbFactory = dbFactory;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public async Task<PagedResult<PlaceSummaryDto>> GetPlacesAsync(PlaceFilterParams filter)
@@ -56,6 +61,19 @@ public class PlaceService : IPlaceService
             parameters.Add("MaxPrice", filter.MaxPrice.Value);
         }
 
+        bool hasUserGeo = filter.UserLat.HasValue && filter.UserLng.HasValue;
+        if (hasUserGeo)
+        {
+            parameters.Add("UserLat", filter.UserLat!.Value);
+            parameters.Add("UserLng", filter.UserLng!.Value);
+
+            if (filter.RadiusKm.HasValue && filter.RadiusKm.Value > 0)
+            {
+                whereClauses.Add($"p.Latitude IS NOT NULL AND p.Longitude IS NOT NULL AND ({GeoHelper.SqlHaversineDistanceKm}) <= @RadiusKm");
+                parameters.Add("RadiusKm", filter.RadiusKm.Value);
+            }
+        }
+
         var whereSql = string.Join(" AND ", whereClauses);
 
         var countSql = $@"
@@ -68,6 +86,7 @@ public class PlaceService : IPlaceService
 
         var orderBySql = filter.SortBy switch
         {
+            "distance" when hasUserGeo => "DistanceKm ASC NULLS LAST, AverageRating DESC",
             "rating" => "AverageRating DESC, ReviewCount DESC",
             "price_asc" => "p.PriceMin ASC",
             "price_desc" => "p.PriceMax DESC",
@@ -79,12 +98,18 @@ public class PlaceService : IPlaceService
             ? "HAVING COALESCE(AVG(CASE WHEN r.Status = 1 THEN r.Rating END), 0.0) >= @MinRating"
             : string.Empty;
 
+        var distanceSelectSql = hasUserGeo
+            ? $"({GeoHelper.SqlHaversineDistanceKm}) AS DistanceKm"
+            : "NULL::DOUBLE PRECISION AS DistanceKm";
+
         var querySql = $@"
             SELECT 
                 p.Id, p.Name, p.Slug, p.Description, p.Address,
                 p.AreaId, a.Name AS AreaName,
                 p.CategoryId, c.Name AS CategoryName,
                 p.PriceMin, p.PriceMax, p.OpeningHours, p.CoverImageUrl,
+                p.Latitude, p.Longitude,
+                {distanceSelectSql},
                 COALESCE(ROUND(AVG(CASE WHEN r.Status = 1 THEN r.Rating END), 1), 0.0)::DOUBLE PRECISION AS AverageRating,
                 COUNT(CASE WHEN r.Status = 1 THEN 1 END) AS ReviewCount,
                 p.Status
@@ -106,12 +131,17 @@ public class PlaceService : IPlaceService
         parameters.Add("Offset", (filter.PageIndex - 1) * filter.PageSize);
 
         var items = (await conn.QueryAsync<PlaceSummaryDto>(querySql, parameters)).AsList();
+        foreach (var item in items)
+        {
+            item.GoogleMapsUrl = GeoHelper.BuildGoogleMapsUrl(item.Latitude, item.Longitude, item.Name);
+        }
+
         var totalPages = (int)Math.Ceiling(totalCount / (double)filter.PageSize);
 
         return new PagedResult<PlaceSummaryDto>(items, totalCount, filter.PageIndex, filter.PageSize, totalPages);
     }
 
-    public async Task<PlaceDetailDto?> GetPlaceDetailAsync(int id, int? currentUserId = null)
+    public async Task<PlaceDetailDto?> GetPlaceDetailAsync(int id, int? currentUserId = null, double? userLat = null, double? userLng = null)
     {
         using var conn = _dbFactory.CreateConnection();
 
@@ -146,10 +176,13 @@ public class PlaceService : IPlaceService
                 new { UserId = currentUserId.Value, PlaceId = id }) > 0;
         }
 
+        place.DistanceKm = GeoHelper.CalculateDistanceKm(userLat, userLng, place.Latitude, place.Longitude);
+        place.GoogleMapsUrl = GeoHelper.BuildGoogleMapsUrl(place.Latitude, place.Longitude, place.Name);
+
         return place;
     }
 
-    public async Task<PlaceDetailDto?> GetPlaceDetailBySlugAsync(string slug, int? currentUserId = null)
+    public async Task<PlaceDetailDto?> GetPlaceDetailBySlugAsync(string slug, int? currentUserId = null, double? userLat = null, double? userLng = null)
     {
         using var conn = _dbFactory.CreateConnection();
 
@@ -158,7 +191,7 @@ public class PlaceService : IPlaceService
 
         if (!id.HasValue) return null;
 
-        return await GetPlaceDetailAsync(id.Value, currentUserId);
+        return await GetPlaceDetailAsync(id.Value, currentUserId, userLat, userLng);
     }
 
     public async Task<PlaceDetailDto> CreatePlaceAsync(CreatePlaceRequest request)
@@ -208,6 +241,8 @@ public class PlaceService : IPlaceService
                 });
             }
         }
+
+        TriggerPlaceEmbeddingSync(placeId);
 
         return (await GetPlaceDetailAsync(placeId))!;
     }
@@ -271,6 +306,8 @@ public class PlaceService : IPlaceService
             }
         }
 
+        TriggerPlaceEmbeddingSync(id);
+
         return (await GetPlaceDetailAsync(id))!;
     }
 
@@ -278,8 +315,15 @@ public class PlaceService : IPlaceService
     {
         using var conn = _dbFactory.CreateConnection();
         var rows = await conn.ExecuteAsync("UPDATE Places SET Status = 2, UpdatedAt = CURRENT_TIMESTAMP WHERE Id = @Id", new { Id = id });
+        if (rows > 0)
+        {
+            TriggerPlaceEmbeddingSync(id);
+        }
         return rows > 0;
     }
+
+    private void TriggerPlaceEmbeddingSync(int placeId) =>
+        RagBackgroundHelper.Enqueue(_scopeFactory, _logger, rag => rag.SyncPlaceEmbeddingAsync(placeId), $"PlaceId={placeId}");
 
     private static async Task<List<ReviewDto>> GetReviewsForPlaceAsync(System.Data.IDbConnection conn, int placeId)
     {

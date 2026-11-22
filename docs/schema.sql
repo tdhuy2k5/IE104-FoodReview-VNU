@@ -121,3 +121,32 @@ CREATE TABLE IF NOT EXISTS Favorites (
     CreatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (UserId, PlaceId)
 );
+
+-- =====================================================================
+-- 10. HẠ TẦNG VECTOR DATABASE (PGVECTOR FOR RAG)
+-- =====================================================================
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Vector thông tin tổng hợp quán ăn + thực đơn (768 chiều cho Gemini text-embedding-004)
+CREATE TABLE IF NOT EXISTS PlaceEmbeddings (
+    PlaceId INT PRIMARY KEY REFERENCES Places(Id) ON DELETE CASCADE,
+    ContentText TEXT NOT NULL,
+    Embedding vector(768) NOT NULL,
+    UpdatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_placeembeddings_hnsw
+    ON PlaceEmbeddings USING hnsw (Embedding vector_cosine_ops);
+
+-- Vector nội dung các bài đánh giá của sinh viên
+CREATE TABLE IF NOT EXISTS ReviewEmbeddings (
+    ReviewId INT PRIMARY KEY REFERENCES Reviews(Id) ON DELETE CASCADE,
+    PlaceId INT NOT NULL REFERENCES Places(Id) ON DELETE CASCADE,
+    ContentText TEXT NOT NULL,
+    Embedding vector(768) NOT NULL,
+    UpdatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviewembeddings_hnsw
+    ON ReviewEmbeddings USING hnsw (Embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_reviewembeddings_place ON ReviewEmbeddings(PlaceId);

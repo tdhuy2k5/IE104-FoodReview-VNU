@@ -1,6 +1,7 @@
 using Dapper;
 using FoodReview.Api.Data;
 using FoodReview.Api.DTOs;
+using FoodReview.Api.Helpers;
 using FoodReview.Api.Models;
 
 namespace FoodReview.Api.Services;
@@ -8,10 +9,14 @@ namespace FoodReview.Api.Services;
 public class ReviewService : IReviewService
 {
     private readonly IDbConnectionFactory _dbFactory;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ReviewService> _logger;
 
-    public ReviewService(IDbConnectionFactory dbFactory)
+    public ReviewService(IDbConnectionFactory dbFactory, IServiceScopeFactory scopeFactory, ILogger<ReviewService> logger)
     {
         _dbFactory = dbFactory;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public async Task<ReviewDto> CreateReviewAsync(int placeId, int userId, CreateReviewRequest request)
@@ -69,6 +74,8 @@ public class ReviewService : IReviewService
                 images.Add(new ReviewImageDto(imgId, url.Trim(), null));
             }
         }
+
+        RagBackgroundHelper.Enqueue(_scopeFactory, _logger, rag => rag.SyncReviewEmbeddingAsync(reviewId), $"ReviewId={reviewId}");
 
         return new ReviewDto(
             reviewId,
@@ -130,6 +137,8 @@ public class ReviewService : IReviewService
         var user = await conn.QueryFirstOrDefaultAsync<User>("SELECT * FROM Users WHERE Id = @Id", new { Id = userId });
         var images = (await conn.QueryAsync<ReviewImageDto>(
             "SELECT Id, ImageUrl, AltText FROM ReviewImages WHERE ReviewId = @ReviewId", new { ReviewId = reviewId })).AsList();
+
+        RagBackgroundHelper.Enqueue(_scopeFactory, _logger, rag => rag.SyncReviewEmbeddingAsync(reviewId), $"ReviewId={reviewId}");
 
         return new ReviewDto(
             reviewId,

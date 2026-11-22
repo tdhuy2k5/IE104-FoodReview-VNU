@@ -1,8 +1,12 @@
+using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using FoodReview.Api.Data;
+using FoodReview.Api.DTOs;
 using FoodReview.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +20,8 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IInteractionService, InteractionService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddHttpClient<IGeminiService, GeminiService>();
+builder.Services.AddScoped<IRagService, RagService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "FoodReviewLangDaiHocSuperSecretKeyForDevelopment2026!@#$%^";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "FoodReviewApi";
@@ -44,6 +50,34 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json; charset=utf-8";
+        var payload = new ApiResponse<object>(false, "Bạn gửi tin nhắn quá nhanh. Vui lòng đợi một lát rồi thử lại.");
+        await context.HttpContext.Response.WriteAsJsonAsync(payload, token);
+    };
+
+    options.AddPolicy("ChatPolicy", httpContext =>
+    {
+        var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var partitionKey = !string.IsNullOrEmpty(userId)
+            ? $"user:{userId}"
+            : $"ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+
+        return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ => new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            SegmentsPerWindow = 2,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0
+        });
+    });
+});
 
 builder.Services.AddCors(options =>
 {
@@ -131,6 +165,7 @@ app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 

@@ -41,6 +41,10 @@ public class PlaceSummaryDto
     public double AverageRating { get; set; }
     public int ReviewCount { get; set; }
     public PlaceStatus Status { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public double? DistanceKm { get; set; }
+    public string? GoogleMapsUrl { get; set; }
 
     public PlaceSummaryDto() { }
     public PlaceSummaryDto(int id, string name, string slug, string? description, string address, int areaId, string areaName, int categoryId, string categoryName, decimal priceMin, decimal priceMax, string openingHours, string? coverImageUrl, double averageRating, int reviewCount, PlaceStatus status)
@@ -77,6 +81,8 @@ public class PlaceDetailDto
     public List<MenuItemDto> MenuItems { get; set; } = new();
     public List<ReviewDto> RecentReviews { get; set; } = new();
     public bool IsFavorite { get; set; }
+    public double? DistanceKm { get; set; }
+    public string? GoogleMapsUrl { get; set; }
 
     public PlaceDetailDto() { }
     public PlaceDetailDto(int id, string name, string slug, string? description, string address, int areaId, string areaName, int categoryId, string categoryName, decimal priceMin, decimal priceMax, string openingHours, double? latitude, double? longitude, string? coverImageUrl, double averageRating, int reviewCount, PlaceStatus status, DateTime createdAt, DateTime updatedAt, List<MenuItemDto> menuItems, List<ReviewDto> recentReviews, bool isFavorite)
@@ -99,7 +105,10 @@ public record PlaceFilterParams(
     double? MinRating,
     string? SortBy,
     int PageIndex = 1,
-    int PageSize = 10
+    int PageSize = 10,
+    double? UserLat = null,
+    double? UserLng = null,
+    double? RadiusKm = null
 );
 
 public record CreatePlaceRequest(
