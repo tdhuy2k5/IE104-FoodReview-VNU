@@ -1,0 +1,98 @@
+# YÊU CẦU: CHUYỂN ĐỔI GOOGLE STITCH SANG REACT VÀ TÍCH HỢP BACKEND
+
+Tôi đang phát triển website **Review Ẩm Thực quanh Làng Đại Học – ĐHQG TP.HCM**. Mã nguồn giao diện đã được thiết kế hoàn chỉnh bằng Google Stitch và đặt trong thư mục `frontend/`. Backend đã được xây dựng trong dự án.
+
+Hãy phân tích, tái cấu trúc và chuyển đổi Frontend sang React, kết nối với Backend hiện có, đồng thời cải thiện trải nghiệm người dùng.
+
+## 1. Phân tích dự án trước khi chỉnh sửa
+
+- Đọc toàn bộ cấu trúc `frontend/` và các file liên quan trong Backend.
+- Xác định công nghệ, chức năng, các trang, component và luồng điều hướng hiện có.
+- Kiểm tra API, authentication, database schema và dữ liệu mà Backend cung cấp.
+- Đánh giá khả năng kết nối giữa Frontend và Backend.
+- Không chỉnh sửa Backend dưới bất kỳ hình thức nào.
+- Nếu Backend thiếu API, sai cấu trúc dữ liệu hoặc chưa đáp ứng chức năng Frontend, hãy báo cáo rõ vấn đề, file liên quan và phương án giải quyết. Không tự ý sửa Backend.
+
+## 2. Chuyển đổi và tổ chức lại Frontend
+
+- Chuyển giao diện Google Stitch sang **React với cấu trúc component rõ ràng**, ưu tiên Vite và React Router nếu dự án chưa có framework phù hợp.
+- Giữ lại thiết kế, nội dung và chức năng hợp lý của bản gốc. Không tự ý loại bỏ các trang hoặc tính năng.
+- Tách component có thể tái sử dụng như Header, Footer, Navbar, RestaurantCard, Filter, SearchBar, ReviewCard, Modal và Pagination.
+- Tổ chức thư mục khoa học theo pages, components, layouts, services, hooks, contexts, assets và styles khi cần thiết.
+- Sử dụng CSS/Tailwind phù hợp với mã nguồn hiện tại, tránh thêm thư viện không cần thiết.
+- Loại bỏ code trùng lặp, xử lý lỗi và tối ưu khả năng bảo trì.
+- Không làm thay đổi các chức năng đang hoạt động nếu chưa có lý do rõ ràng.
+
+## 3. Tích hợp Frontend với Backend
+
+- Kết nối React với các API thực tế của Backend.
+- Tổ chức API service tập trung, sử dụng biến môi trường cho Base URL.
+- Xử lý loading, error, empty state và phản hồi khi thao tác thành công.
+- Ưu tiên sử dụng dữ liệu thật, không hardcode dữ liệu giả thay cho API đã có.
+- Tích hợp các chức năng như danh sách quán, tìm kiếm, lọc, phân trang, đánh giá, tài khoản, đăng nhập, lưu quán và các chức năng khác nếu Backend hỗ trợ.
+- Không tự tạo API giả hoặc hiển thị chức năng chưa hoạt động như thể đã hoàn thiện.
+- Nếu thiếu API, giữ giao diện phù hợp, đánh dấu chức năng chưa tích hợp và báo cáo rõ.
+
+## 4. Cải thiện UI/UX bằng Frontend Skills
+
+Hãy kiểm tra và tận dụng các skill đã cài đặt, ưu tiên:
+
+- **UI UX Pro Max:** Xây dựng design system, màu sắc, typography và bố cục.
+- **Frontend Design:** Cải thiện tính thẩm mỹ và chất lượng giao diện.
+- **Impeccable:** Tinh chỉnh spacing, hierarchy và trải nghiệm tương tác.
+- **Vercel React Best Practices:** Tối ưu component, rendering và hiệu năng.
+- **Web Design Guidelines:** Kiểm tra responsive, accessibility và usability.
+- **MengTo Animation:** Thêm chuyển động tinh tế khi thực sự cần thiết.
+
+Không cần sử dụng tất cả skill cho mọi tác vụ. Hãy lựa chọn và kết hợp hợp lý để tránh xung đột.
+
+### Định hướng thiết kế
+
+Website hướng đến **sinh viên, giảng viên và người dân sinh sống quanh Làng Đại Học**.
+
+Giao diện cần:
+- Hiện đại, gần gũi, trẻ trung, thân thiện và đáng tin cậy.
+- Thu hút nhưng không quá màu mè, không lạm dụng hiệu ứng 3D.
+- Ưu tiên trải nghiệm tìm quán nhanh, xem giá, địa điểm, món ăn và đánh giá.
+- Sử dụng hình ảnh món ăn hấp dẫn, typography dễ đọc và màu sắc hài hòa.
+- Bố cục thoáng, phân cấp thông tin rõ ràng, hạn chế quá nhiều nội dung xuất hiện cùng lúc.
+- Tối ưu trải nghiệm mobile-first, responsive trên điện thoại, tablet và desktop.
+- Có hover, transition, loading và feedback phù hợp; tránh animation gây mất tập trung.
+- Hạn chế popup, banner, thẻ thông tin và các thành phần không thực sự cần thiết.
+- Giữ tính nhất quán giữa các trang và phù hợp với thói quen sử dụng của người dùng Việt Nam.
+
+**Đặc biệt:** Không được thiết kế lại toàn bộ theo cảm tính. Hãy kế thừa bản Google Stitch, phân tích những điểm chưa hợp lý và chỉ thay đổi khi cải thiện được trải nghiệm người dùng.
+
+## 5. Quy trình thực hiện
+
+**Giai đoạn 1 – Phân tích và đề xuất**
+1. Đánh giá cấu trúc Frontend và Backend hiện tại.
+2. Liệt kê các chức năng đã có, chưa có và chưa thể kết nối.
+3. Đề xuất cấu trúc thư mục React phù hợp.
+4. Đề xuất những thay đổi UI/UX cần thiết, kèm lý do và mức độ ưu tiên.
+5. Thông báo các điểm Backend chưa phù hợp.
+
+**Giai đoạn 2 – Triển khai**
+- Sau khi hoàn tất phân tích, tiến hành chuyển đổi Frontend sang React.
+- Tách component, tổ chức routing và kết nối các API sẵn có.
+- Giữ nguyên Backend và các file cấu hình quan trọng.
+- Triển khai UI/UX theo các đề xuất hợp lý, không thay đổi lớn ngoài phạm vi được duyệt.
+- Thực hiện lần lượt theo từng nhóm chức năng để dễ kiểm tra.
+
+**Giai đoạn 3 – Kiểm thử**
+- Chạy build và kiểm tra các lỗi React.
+- Kiểm tra điều hướng, API, responsive, form, modal và tương tác.
+- Kiểm tra các trạng thái loading, error và empty.
+- Kiểm tra hiệu năng và loại bỏ code thừa.
+- Không tuyên bố chức năng hoạt động nếu chưa thực sự kiểm thử thành công.
+
+## 6. Nguyên tắc bắt buộc
+
+1. **Tuyệt đối không chỉnh sửa Backend**, kể cả khi phát hiện lỗi hoặc thiếu API.
+2. Không tự ý thay đổi database, dữ liệu hoặc cấu trúc API.
+3. Không xóa các chức năng và giao diện quan trọng từ Google Stitch.
+4. Không cài thêm thư viện nếu chưa xác định rõ sự cần thiết.
+5. Ưu tiên code sạch, dễ đọc, dễ mở rộng và hạn chế trùng lặp.
+6. Không hardcode thông tin nhạy cảm như API key, mật khẩu hoặc token.
+7. Không thay đổi hoặc xóa mã nguồn Google Stitch gốc khi chưa có bản sao lưu an toàn.
+8. Nếu phát hiện vấn đề lớn về chức năng, thiết kế hoặc kiến trúc, hãy báo cáo và đề xuất phương án trước khi thực hiện thay đổi lớn.

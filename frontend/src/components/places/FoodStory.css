@@ -1,0 +1,132 @@
+.hero-art.food-story {
+  --story-duration: 12s;
+  height: 380px;
+  min-width: 0;
+}
+.food-story-heading, .food-story-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  color: #64765b;
+  font-size: 8px;
+  letter-spacing: .12em;
+}
+.food-story-heading button {
+  flex-shrink: 0;
+  padding: 7px 9px;
+  min-height: 32px;
+  border: 1px solid #dce0d1;
+  border-radius: 20px;
+  color: #37543b;
+  background: #fcfaf6;
+  font-size: 10px;
+  letter-spacing: 0;
+}
+.food-story-heading button:hover { background: #e9eee2; }
+.food-story-scene { width: 100%; height: 310px; overflow: visible; }
+.food-story-bowl {
+  transform-origin: 220px 230px;
+  animation: food-bowl-arrive var(--story-duration) ease-in-out infinite;
+}
+.food-story-topping {
+  animation: food-topping-arrive var(--story-duration) ease-in-out infinite;
+}
+.food-story-steam {
+  animation: food-steam-rise var(--story-duration) ease-in-out infinite;
+}
+.food-story-sparkles {
+  transform-origin: 220px 166px;
+  animation: food-sparkle var(--story-duration) ease-in-out infinite;
+}
+.food-story-message {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 90%;
+  padding: 12px 15px;
+  border: 1px solid #dce0d1;
+  border-radius: 15px 15px 15px 3px;
+  background: #fcfaf6;
+  color: #273b33;
+  box-shadow: 0 10px 24px #183b3010;
+  animation: food-message-one var(--story-duration) ease-in-out infinite;
+}
+.food-story-message p { margin: 0; font-size: 10px; line-height: 1.7; }
+.food-story-message strong, .food-story-message p span { display: block; }
+.food-story-message p span { color: #64765b; }
+.food-story-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #f9e3c6;
+  color: #a95c2c;
+  font-size: 20px;
+}
+.food-story-message-one { top: 91px; right: 0; }
+.food-story-message-two {
+  bottom: 43px;
+  left: 0;
+  background: #eaf0df;
+  animation-name: food-message-two;
+}
+.food-story-message-two .food-story-avatar { color: #37543b; background: #d7e2c9; }
+.food-story-caption { font-size: 8px; letter-spacing: .05em; }
+.food-story-progress { height: 2px; background: #e5e8da; margin-top: 13px; overflow: hidden; }
+.food-story-progress span {
+  display: block;
+  height: 100%;
+  background: #a8b597;
+  transform-origin: left;
+  animation: food-progress var(--story-duration) linear infinite;
+}
+.food-story[data-paused="true"] *, .food-story[data-paused="true"] {
+  animation-play-state: paused;
+}
+@keyframes food-bowl-arrive {
+  0%, 4%, 100% { opacity: 0; transform: translateY(20px) scale(.92); }
+  12%, 93% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes food-topping-arrive {
+  0%, 17%, 100% { opacity: 0; transform: translateY(-30px); }
+  28%, 94% { opacity: 1; transform: translateY(0); }
+}
+@keyframes food-steam-rise {
+  0%, 28%, 100% { opacity: 0; transform: translateY(8px); }
+  40%, 62%, 82% { opacity: .8; transform: translateY(-5px); }
+  51%, 73%, 94% { opacity: .3; transform: translateY(-14px); }
+}
+@keyframes food-sparkle {
+  0%, 32%, 100% { opacity: 0; transform: scale(.8); }
+  43%, 90% { opacity: 1; transform: scale(1); }
+}
+@keyframes food-message-one {
+  0%, 55%, 100% { opacity: 0; transform: translateY(12px) scale(.96); }
+  63%, 93% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes food-message-two {
+  0%, 67%, 100% { opacity: 0; transform: translateY(12px) scale(.96); }
+  75%, 93% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes food-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (min-width: 601px) and (max-width: 1050px) {
+  .food-story-heading { font-size: 7px; letter-spacing: .04em; }
+  .food-story-message { padding: 10px; }
+  .food-story-message p { font-size: 9px; }
+}
+@media (max-width: 600px) {
+  .hero-art.food-story { width: 100%; max-width: 380px; height: 345px; }
+  .food-story-scene { height: 275px; }
+  .food-story-message-one { top: 75px; }
+  .food-story-message-two { bottom: 46px; }
+  .food-story-message { padding: 10px 12px; }
+  .food-story-heading { font-size: 7px; letter-spacing: .07em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .food-story *, .hero-art.food-story { animation: none !important; }
+  .food-story-heading button, .food-story-progress { display: none; }
+}

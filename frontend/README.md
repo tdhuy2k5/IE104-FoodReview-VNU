@@ -1,112 +1,88 @@
-# Frontend — Food Review Làng Đại học
+# Foodie Review · React frontend
 
-Frontend tĩnh (HTML + CSS + JavaScript thuần) để thử nghiệm nhanh toàn bộ API của backend. Không cần build, không cần Node.js hay npm.
+Frontend React + TypeScript + Vite, kế thừa màu xanh đậm/nền kem, font Noto Serif/Plus Jakarta Sans và các màn hình của Google Stitch. Backend và database không được chỉnh sửa hoặc khởi chạy trong quá trình chuyển đổi.
 
-## Cấu trúc
+## Chạy tại máy
 
-```
-frontend/
-├── index.html          # Giao diện chính (SPA một trang)
-├── README.md
-├── css/
-│   └── styles.css      # Toàn bộ style
-└── js/
-    ├── config.js       # Cấu hình API_BASE_URL và danh sách cổng tự dò
-    ├── utils.js        # Helper DOM, format, toast, modal, nhãn enum, ghép URL ảnh
-    ├── api.js          # Lớp gọi API, tự dò backend, tự gắn JWT
-    ├── auth.js         # Đăng nhập / đăng ký / phiên làm việc
-    ├── places.js       # Danh sách, bộ lọc, chi tiết địa điểm
-    ├── reviews.js      # Đánh giá, upload ảnh, báo cáo vi phạm
-    ├── admin.js        # Bảng điều khiển quản trị
-    └── app.js          # Khởi tạo và nối sự kiện
-```
-
-## Chạy frontend
-
-### 1. Khởi động backend
-
-**Cách khuyến nghị — Docker Compose** (PostgreSQL 16 + API):
-
-```bash
-docker compose up --build
-```
-
-API chạy tại `http://localhost:5000`, Swagger: `http://localhost:5000/swagger`.
-
-**Hoặc chạy trực tiếp bằng .NET** (cần PostgreSQL đang chạy):
-
-```bash
-cd backend/FoodReview.Api
-dotnet run
-```
-
-Backend .NET mặc định chạy tại `http://localhost:5114` (xem `Properties/launchSettings.json`). Swagger: `http://localhost:5114/swagger`.
-
-### 2. Chạy static server cho frontend
-
-Cách khuyến nghị (Python có sẵn trên hầu hết máy):
-
-```bash
+```powershell
 cd frontend
-python -m http.server 5500
+npm.cmd ci --cache .npm-cache
+npm.cmd run dev
 ```
 
-Mở `http://localhost:5500`.
+Mở địa chỉ Vite in trong terminal, mặc định `http://127.0.0.1:5173`.
 
-Hoặc dùng extension **Live Server** trong VS Code: chuột phải `frontend/index.html` → *Open with Live Server*.
+Sao chép `.env.example` thành `.env.local` khi cần đổi kết nối. Mặc định Frontend gọi `/api` qua Vite proxy đến `http://localhost:5114`, đúng launch profile Backend hiện có. Nếu Backend đã chạy bằng Docker tại cổng 5000, đặt `API_PROXY_TARGET=http://localhost:5000` rồi khởi động lại Vite. Tài liệu này không yêu cầu chạy Backend hoặc tạo/seed database tự động.
 
-> Mở trực tiếp `index.html` bằng `file://` cũng có thể hoạt động nhờ CORS `AllowAll` của backend, nhưng nên dùng HTTP server để tránh khác biệt giữa các trình duyệt.
+Frontend hiển thị lỗi kết nối cùng nút thử lại khi API chưa sẵn sàng; không chuyển sang dữ liệu quán giả. Ảnh trong hero chỉ là ảnh minh họa ẩm thực đã được dùng trong bản Stitch, không phải thông tin của một quán cụ thể.
 
-### 3. Đổi cổng API
+## Phạm vi đã triển khai
 
-Frontend tự dò backend: thử lần lượt `http://<host>:5000` (Docker) rồi `http://<host>:5114` (dotnet) qua `GET /api/Areas`, và dùng cổng phản hồi đầu tiên. Danh sách cổng nằm trong `API_PORTS`. Nếu mất kết nối, frontend không ghi nhớ cổng lỗi mà sẽ dò lại ở lần gọi kế tiếp, nên chỉ cần tải lại trang (hoặc bấm “Thử lại”) sau khi backend khởi động xong.
+- Trang chủ và trang địa điểm: tìm kiếm bằng Enter/nút Tìm, danh mục và khu vực từ API, bộ lọc ngân sách, sắp xếp, phân trang từ server; state nằm trong URL.
+- Chi tiết quán theo slug: dữ liệu thật, menu, khoảng giá, địa chỉ, giờ mở cửa, link chỉ đường; không tự suy ra trạng thái đang mở cửa.
+- Đăng ký, đăng nhập, hồ sơ, thay avatar, đăng xuất; token chỉ giữ trong bộ nhớ của tab. Tải lại trang cần đăng nhập lại. Không có refresh token hoặc API thu hồi token ở Backend hiện tại.
+- Lưu/bỏ lưu quán được đồng bộ giữa các trang, khóa request trùng và xử lý lỗi. Không tự retry API toggle.
+- Review: chọn điểm nguyên 1–5, nội dung tối đa 2.000 ký tự, tối đa 5 ảnh theo giới hạn UI. Upload từng ảnh JPG/PNG/WebP ≤5 MB rồi gửi URL. Sửa/xóa review chính chủ, báo cáo review với lý do.
+- Loading, empty, error, 404, phản hồi thành công, modal native có quản lý focus, liên kết skip-to-content, các form có label.
+- Route: `/`, `/dia-diem`, `/quan/:slug`, `/cong-dong`, `/lien-he`, `/dang-nhap`, `/dang-ky`, `/tai-khoan`, `/tai-khoan/quan-da-luu`, `/tai-khoan/danh-gia`, `/tai-khoan/bao-cao`, `/thong-tin`.
 
-Nếu backend chạy ở cổng khác, đặt cứng `API_BASE_URL` trong `frontend/js/config.js`:
+## Hiệu ứng 3D
 
-```js
-const CONFIG = {
-  API_BASE_URL: 'http://localhost:5000',
-  API_PORTS: ['5000', '5114'],
-  // ...
-};
+Không dùng Three.js/GSAP hoặc thư viện animation. Hook `useTilt` giới hạn góc nghiêng thẻ ở 4°, hero ở 5°, ảnh chi tiết ở 2°; chỉ bật với con trỏ chính xác và hover. Chỉ đo bố cục khi pointer đi vào, cập nhật bằng `requestAnimationFrame`, hủy frame khi rời/unmount. Ảnh hero, nhãn và nội dung thẻ có lớp `translateZ` cùng bóng tạo chiều sâu. Mobile giữ chiều sâu thị giác bằng lớp ảnh/bóng và phản hồi nút; không nghiêng theo thao tác chạm để tránh cản cuộn trang. `prefers-reduced-motion` tắt các chuyển động không thiết yếu và giữ nội dung hiển thị.
+
+## Hợp đồng API
+
+Lớp service nằm ở `src/services`, DTO nằm ở `src/types/api.ts`. Không dùng endpoint trong tài liệu kiến trúc nếu khác controller thực tế.
+
+| Nhóm | API |
+|---|---|
+| Danh mục/khu vực | `GET /api/categories`, `GET /api/areas` |
+| Quán | `GET /api/places`, `GET /api/places/slug/{slug}` |
+| Tài khoản | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `PUT /api/auth/profile` |
+| Lưu quán | `GET /api/favorites`, `POST /api/places/{id}/favorite` |
+| Review | `GET/POST /api/reviews/place/{placeId}`, `GET /api/reviews/my`, `PUT/DELETE /api/reviews/{id}` |
+| Báo cáo | `POST /api/reviews/{id}/report` |
+| Upload | `POST /api/upload?folder=images`, multipart field `file` |
+
+Danh sách quán sử dụng `Search`, `AreaId`, `CategoryId`, `MinPrice`, `MaxPrice`, `SortBy`, `PageIndex`, `PageSize`. Review dùng `page`, `pageSize`. Response bọc bởi `success/message/data`; enum được ánh xạ theo số. HTTP client xử lý cả ProblemDetails và lỗi proxy không phải JSON. URL ảnh `/uploads/...` được phân giải theo origin API. `VITE_` là biến công khai trong bundle; không đặt khóa bí mật tại đây.
+
+## Những phần chưa thể tích hợp
+
+Giữ màn hình và thể hiện trạng thái chưa khả dụng, không hiển thị số liệu giả hay báo đã gửi thành công:
+
+- Feed cộng đồng toàn hệ thống và khối review mới nhất toàn website.
+- Lượt hữu ích, bình luận dưới review, xác minh sinh viên.
+- Lịch sử báo cáo của người dùng.
+- Liên hệ/đề xuất quán; email/văn phòng hỗ trợ và chính sách chính thức chưa được xác minh.
+- Bản đồ nhiều quán: API danh sách chưa có tọa độ. Có sơ đồ minh họa và chỉ đường tại chi tiết từng quán.
+
+Các vấn đề Backend đã phát hiện và chỉ báo cáo:
+
+1. `PlaceService.GetPlacesAsync`: count query không áp dụng `MinRating` dù truy vấn items áp dụng HAVING. Chưa đưa bộ lọc MinRating vào UI.
+2. `PlaceService.GetPlaceDetailAsync`: chưa giới hạn Published. Frontend không render chi tiết Draft/Hidden, nhưng đây không thay thế kiểm soát truy cập tại Backend.
+3. `recentReviews` trong response chi tiết hiện không giới hạn, truy vấn ảnh theo từng review. Frontend sử dụng API review phân trang để trình bày nhưng không thể tự giảm payload của response chi tiết.
+4. Review mới hiện được Published ngay. Thông báo Frontend dựa trên status response, không mặc định nói đang chờ kiểm duyệt.
+5. Upload ảnh và ghi review là hai bước không có transaction chung/API xóa upload cho người dùng; nếu bỏ dở có thể còn file chưa gắn vào review. Frontend tái sử dụng URL đã upload thành công khi retry, không tự xóa file máy chủ.
+
+## Kiểm thử
+
+```powershell
+npm.cmd run build
+npm.cmd test
+npx.cmd playwright test
 ```
 
-## Tài khoản mẫu
+- Vitest: hợp đồng API, upload boundary, lỗi 401/ProblemDetails, lọc URL, request race, modal và hồi quy phân trang.
+- Playwright: chạy Edge có sẵn (`channel: msedge`), dùng API interception chỉ trong test. Kiểm tra tìm kiếm, lọc, Back, login, favorites, profile, review CRUD/report, lỗi API, 3D/reduced motion và responsive. Không gửi request đến Backend/database. Nếu máy không có Edge, cần chủ động chọn trình duyệt đã cài trong cấu hình kiểm thử.
+- Ảnh QA và trace lỗi được ghi trong `test-results/` và không đưa vào Git. Dữ liệu fixture trong `tests/` không được import vào ứng dụng.
+- Kiểm thử với Backend thật cần dịch vụ sẵn sàng và dữ liệu/tài khoản kiểm thử do người phụ trách cung cấp. Kết quả fixture không được coi là đã xác nhận Backend/database thực tế.
 
-| Vai trò | Email | Mật khẩu |
-| --- | --- | --- |
-| Admin | `admin@langdaihoc.vn` | `Admin@123` |
-| Sinh viên | `sinhvien@uit.edu.vn` | `Student@123` |
+## Bảo toàn nguồn và triển khai
 
-Trong modal đăng nhập có nút điền nhanh tài khoản mẫu.
+Kết quả kiểm chứng ngày 18/11/2026: build TypeScript/Vite thành công; 13 kiểm thử Vitest và 6 kiểm thử Edge headless đều qua. Đã kiểm tra responsive ở 390/768/1440px, upload ảnh, cảnh báo bản nháp, 3D và reduced motion. SHA-256 xác nhận bản Stitch gốc, bản sao lưu và 43 file Backend giữ nguyên. Không thấy API lắng nghe tại các cổng cấu hình 5000/5114/7158 ở thời điểm kiểm tra, nên chưa xác nhận luồng end-to-end với Backend/database thực tế.
 
-## Chức năng đã nối API
+`code.html` giữ nguyên; bản sao nằm tại `legacy/code.original.html`. `legacy/baseline.json` lưu SHA-256 bản Stitch và các file Backend để đối chiếu không thay đổi. Các chỉnh sửa, dependency và output build đều nằm trong `frontend/`.
 
-**Công khai**
-- Danh sách địa điểm + tìm kiếm, lọc theo khu vực / danh mục / ngân sách / đánh giá, sắp xếp, phân trang — `GET /api/Places`
-- Chi tiết địa điểm, thực đơn, đánh giá — `GET /api/Places/{id}`, `GET /api/Reviews/place/{placeId}`
-- Danh sách khu vực / danh mục — `GET /api/Areas`, `GET /api/Categories`
+Triển khai nội dung `dist/` trên static host có SPA fallback về `index.html` để link trực tiếp hoạt động. Nếu gọi API khác origin, đặt `VITE_API_BASE_URL=https://your-api.example/api` trước build và dùng HTTPS phù hợp. Vite proxy chỉ dùng trong phát triển, không tự đi theo bản build. Không thay đổi cấu hình Backend để host Frontend.
 
-**Tài khoản**
-- Đăng ký, đăng nhập, lấy hồ sơ — `POST /api/Auth/register`, `POST /api/Auth/login`, `GET /api/Auth/me`
-- Lưu token trong `localStorage`, tự gắn `Authorization: Bearer ...`
-
-**Sinh viên (đã đăng nhập)**
-- Lưu / bỏ lưu quán yêu thích — `POST /api/Places/{id}/favorite`
-- Xem danh sách yêu thích — `GET /api/Favorites`
-- Viết đánh giá kèm upload ảnh — `POST /api/Upload`, `POST /api/Reviews/place/{placeId}`
-- Xem / xóa đánh giá của mình — `GET /api/Reviews/my`, `DELETE /api/Reviews/{id}`
-- Báo cáo đánh giá vi phạm — `POST /api/Reviews/{id}/report`
-
-**Admin**
-- Danh sách báo cáo + xử lý / ẩn đánh giá — `GET /api/Admin/reports`, `PUT /api/Admin/reports/{id}/resolve`
-- Danh sách người dùng + khóa/mở khóa — `GET /api/Admin/users`, `PUT /api/Admin/users/{id}/toggle-ban`
-- Danh sách địa điểm + thêm địa điểm + ẩn địa điểm — `GET /api/Admin/places`, `POST /api/Places`, `DELETE /api/Places/{id}`
-
-## Ghi chú
-
-- Backend tự dò cổng khi khởi động frontend; không cần sửa `config.js` nếu dùng Docker (`:5000`) hoặc `dotnet run` (`:5114`).
-- Enum từ backend trả về dạng **số** (`0`, `1`, `2`...), frontend ánh xạ sang nhãn tiếng Việt trong `js/utils.js`.
-- Danh mục trong PostgreSQL lưu `Icon` dạng tên (`utensils`, `soup`, `flame`, `coffee`, `pot`, `leaf`); frontend ánh xạ sang emoji trong `js/places.js`.
-- Đây là frontend thử nghiệm API, chưa tối ưu cho production (không có router, state management hay bundler).
-- File upload được lưu vào `wwwroot/uploads/` của backend (Docker dùng volume `api_uploads`) và phục vụ qua static files; frontend ghép URL tương đối với địa chỉ API đã dò.
+Frontend Skills đã tham chiếu: Frontend Design, Vercel React Best Practices và MengTo Animation Systems; kết hợp với bản phân tích UI/UX đã duyệt. Không cài Python hoặc sửa các skill của dự án.

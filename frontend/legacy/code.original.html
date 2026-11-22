@@ -1,0 +1,2445 @@
+<!DOCTYPE html><html class="scroll-smooth" lang="vi"><head></head><body class="min-h-screen flex flex-col bg-[#fcfaf6] antialiased selection:bg-brand selection:text-white"><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Ẩm thực Làng Đại học - Prototype Tương Tác</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Google Fonts: Noto Serif & Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#183b30',
+              dark: '#0f2720',
+              light: '#235243',
+              accent: '#d97736',
+              bg: '#fcfaf6',
+              surface: '#ffffff',
+              card: '#f7f4ed',
+              border: '#e8e2d5'
+            }
+          },
+          fontFamily: {
+            serif: ['"Noto Serif"', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #fcfaf6;
+      color: #1f2937;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-serif {
+      font-family: 'Noto Serif', serif;
+    }
+    /* Sticky header transition */
+    #main-header {
+      transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), 
+                  box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                  padding 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #main-header.scrolled {
+      background-color: rgba(252, 250, 246, 0.96);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px -2px rgba(24, 59, 48, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+      border-bottom: 1px solid rgba(232, 226, 213, 0.8);
+    }
+    /* View transition effect */
+    .page-view {
+      display: none;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 200ms ease, transform 200ms ease;
+    }
+    .page-view.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* Card 3D tilt */
+    .food-card {
+      transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), 
+                  box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      transform-style: preserve-3d;
+      perspective: 1000px;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .food-card:hover {
+        box-shadow: 0 16px 32px -8px rgba(24, 59, 48, 0.16), 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+    }
+    /* Mobile tap feedback */
+    @media (hover: none) {
+      .food-card:active {
+        transform: scale(0.98);
+      }
+    }
+    /* Modal / Popover transition */
+    .dropdown-menu {
+      transform-origin: top right;
+      transition: opacity 150ms ease-out, transform 150ms ease-out, visibility 150ms;
+    }
+    .dropdown-menu.hidden-custom {
+      opacity: 0;
+      transform: scale(0.95) translateY(-8px);
+      pointer-events: none;
+      visibility: hidden;
+    }
+    .dropdown-menu.visible-custom {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+      visibility: visible;
+    }
+    /* Hide scrollbar for tabs */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+
+
+<!-- ================= PERSISTENT STICKY HEADER ================= -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-[#fcfaf6] border-b border-[#e8e2d5]/60" id="main-header">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+<!-- Brand Logo -->
+<a class="flex items-center gap-3 group focus:outline-none" href="javascript:void(0)" onclick="navigateTo('home')" title="Về Trang chủ">
+<div class="w-10 h-10 rounded-full bg-brand flex items-center justify-center text-white shadow-md shadow-brand/20 group-hover:bg-brand-light transition">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="utensils" aria-hidden="true" class="lucide lucide-utensils w-5 h-5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>
+</div>
+<div class="flex flex-col">
+<span class="font-serif text-xl sm:text-2xl font-bold tracking-tight text-brand leading-none">FOODIE REVIEW</span>
+<span class="text-[11px] text-gray-500 font-medium tracking-wider uppercase mt-1">ĐHQG TP.HCM • Sinh viên</span>
+</div>
+</a>
+<!-- Desktop Nav Items -->
+<nav class="hidden md:flex items-center space-x-1 lg:space-x-2">
+<button class="nav-item px-4 py-2 rounded-full text-sm font-semibold transition text-brand bg-brand/10 border-b-2 border-brand" id="nav-btn-home" onclick="navigateTo('home')">
+          Trang chủ
+        </button>
+<button class="nav-item px-4 py-2 rounded-full text-sm font-medium hover:text-brand hover:bg-brand/5 transition text-gray-600" id="nav-btn-community" onclick="navigateTo('community')">
+          Cộng đồng
+        </button>
+<button class="nav-item px-4 py-2 rounded-full text-sm font-medium hover:text-brand hover:bg-brand/5 transition text-gray-600" id="nav-btn-places" onclick="navigateTo('places')">
+          Địa điểm
+        </button>
+<button class="nav-item px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:text-brand hover:bg-brand/5 transition" id="nav-btn-contact" onclick="navigateTo('contact')">
+          Liên hệ
+        </button>
+</nav>
+<!-- User Profile & Action Dropdown -->
+<div class="relative flex items-center gap-3">
+<!-- Mobile Menu Trigger -->
+<button class="md:hidden p-2 rounded-lg text-gray-600 hover:text-brand hover:bg-brand/5" onclick="toggleMobileNav()">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="menu" aria-hidden="true" class="lucide lucide-menu w-6 h-6"><path d="M4 5h16"></path><path d="M4 12h16"></path><path d="M4 19h16"></path></svg>
+</button>
+<!-- User Avatar & Trigger Button -->
+<button aria-expanded="false" class="flex items-center gap-2 p-1.5 pl-2 pr-3 rounded-full border border-[#e8e2d5] hover:border-brand/40 bg-white shadow-sm hover:shadow transition focus:outline-none" id="user-menu-btn" onclick="toggleUserDropdown(event)">
+<img alt="Avatar SV" class="w-8 h-8 rounded-full object-cover ring-2 ring-brand/10" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg">
+<span class="text-xs font-semibold text-brand hidden sm:inline">Lan Anh</span>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="chevron-down" aria-hidden="true" class="lucide lucide-chevron-down w-3.5 h-3.5 text-gray-500 transition-transform duration-200" id="menu-arrow"><path d="m6 9 6 6 6-6"></path></svg>
+</button>
+<!-- Dropdown Menu (Hồ sơ, Quán đã lưu, Đánh giá, Báo cáo, Đăng xuất) -->
+<div class="dropdown-menu hidden-custom absolute right-0 top-full mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-[#e8e2d5] py-2 z-50" id="user-dropdown">
+<div class="px-4 py-3 border-b border-gray-100 bg-brand/5 rounded-t-2xl">
+<p class="text-xs text-gray-500 font-medium">Đăng nhập tài khoản</p>
+<p class="text-sm font-bold text-brand truncate">lananh.sv@vnuhcm.edu.vn</p>
+<span class="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="shield-check" aria-hidden="true" class="lucide lucide-shield-check w-3 h-3"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg> SV ĐHQG Xác Thực
+            </span>
+</div>
+<div class="py-1">
+<a class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f7f4ed] hover:text-brand transition font-medium" href="javascript:void(0)" onclick="openUserModal('profile')">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="user" aria-hidden="true" class="lucide lucide-user w-4 h-4 text-brand"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Hồ sơ sinh viên
+            </a>
+<a class="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f7f4ed] hover:text-brand transition font-medium" href="javascript:void(0)" onclick="openUserModal('saved')">
+<div class="flex items-center gap-3">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bookmark" aria-hidden="true" class="lucide lucide-bookmark w-4 h-4 text-brand"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"></path></svg> Quán đã lưu
+              </div>
+<span class="text-xs font-bold bg-brand/10 text-brand px-2 py-0.5 rounded-full" id="saved-badge-count">2</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f7f4ed] hover:text-brand transition font-medium" href="javascript:void(0)" onclick="openUserModal('my-reviews')">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-4 h-4 text-brand"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> Đánh giá của tôi
+            </a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f7f4ed] hover:text-brand transition font-medium" href="javascript:void(0)" onclick="openUserModal('my-reports')">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="flag" aria-hidden="true" class="lucide lucide-flag w-4 h-4 text-brand"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg> Báo cáo của tôi
+            </a>
+</div>
+<div class="border-t border-gray-100 pt-1">
+<a class="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition font-medium" href="javascript:void(0)" onclick="triggerLogout()">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="log-out" aria-hidden="true" class="lucide lucide-log-out w-4 h-4 text-red-500"><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path></svg> Đăng xuất
+            </a>
+</div>
+</div>
+</div>
+</div>
+<!-- Mobile Nav Bar Expandable -->
+<div class="hidden md:hidden px-4 pt-2 pb-4 border-t border-[#e8e2d5] bg-[#fcfaf6] space-y-1" id="mobile-nav">
+<button class="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold text-brand bg-brand/10" onclick="navigateTo('home'); toggleMobileNav();">Trang chủ</button>
+<button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand/5" onclick="navigateTo('community'); toggleMobileNav();">Cộng đồng</button>
+<button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand/5" onclick="navigateTo('places'); toggleMobileNav();">Địa điểm</button>
+<button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand/5" onclick="navigateTo('contact'); toggleMobileNav();">Liên hệ</button>
+</div>
+</header>
+<!-- Main Container with top padding to clear sticky header -->
+<main class="flex-1 pt-20">
+<!-- ================= VIEW 1: TRANG CHỦ ================= -->
+<section class="page-view active" id="view-home">
+<!-- Hero Banner -->
+<div class="relative bg-gradient-to-b from-[#183b30] to-[#0f2720] text-white py-16 sm:py-24 overflow-hidden">
+<div class="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+<div class="max-w-4xl mx-auto px-4 text-center relative z-10">
+
+<h1 class="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4 text-white drop-shadow-sm">
+            ẨM THỰC LÀNG ĐẠI HỌC
+          </h1>
+<p class="text-base sm:text-lg text-emerald-100/90 font-light max-w-2xl mx-auto mb-8">
+            Tìm quán ngon quanh KTX Khu A, Khu B, UIT, Khoa học Tự nhiên • Vừa túi tiền, đúng chuẩn sinh viên
+          </p>
+<!-- Search & Filter Bar -->
+<div class="bg-white p-2 sm:p-2.5 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-center gap-2 border border-white/20">
+<div class="flex items-center gap-3 flex-1 w-full px-3 py-1.5">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="search" aria-hidden="true" class="lucide lucide-search w-5 h-5 text-gray-400"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
+<input class="w-full text-gray-800 placeholder-gray-400 focus:outline-none text-sm font-medium" id="home-search-input" placeholder="Tìm món ăn, tên quán (cơm sườn, lẩu cá, bún bò...)" type="text">
+</div>
+<div class="flex items-center gap-2 w-full sm:w-auto">
+<!-- Filter Dropdown Trigger -->
+<button class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:border-brand hover:text-brand bg-gray-50/80 hover:bg-white text-sm font-semibold transition flex-1 sm:flex-none" onclick="toggleFilterModal()">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="sliders-horizontal" aria-hidden="true" class="lucide lucide-sliders-horizontal w-4 h-4 text-brand"><path d="M10 5H3"></path><path d="M12 19H3"></path><path d="M14 3v4"></path><path d="M16 17v4"></path><path d="M21 12h-9"></path><path d="M21 19h-5"></path><path d="M21 5h-7"></path><path d="M8 10v4"></path><path d="M8 12H3"></path></svg>
+<span>Bộ lọc</span>
+<span class="hidden w-2 h-2 rounded-full bg-amber-500" id="active-filter-indicator"></span>
+</button>
+<!-- Search Submit -->
+<button class="px-6 py-2.5 rounded-xl bg-brand hover:bg-brand-light text-white font-semibold text-sm transition shadow-md shadow-brand/30 flex items-center justify-center gap-1.5 flex-1 sm:flex-none" onclick="executeSearch()">
+<span>Tìm</span>
+</button>
+</div>
+</div>
+<!-- Quick keyword chips -->
+<div class="flex items-center justify-center flex-wrap gap-2 text-xs text-emerald-200/80 mt-5">
+<span class="text-white/60">Gợi ý nhanh:</span>
+<button class="underline hover:text-white transition" onclick="quickFilter('Cơm tấm')">Cơm tấm</button> •
+            <button class="underline hover:text-white transition" onclick="quickFilter('Trà sữa')">Trà sữa</button> •
+            <button class="underline hover:text-white transition" onclick="quickFilter('Lẩu cá')">Lẩu cá</button> •
+            <button class="underline hover:text-white transition" onclick="quickFilter('Bánh tráng nướng')">Bánh tráng nướng</button>
+</div>
+</div>
+</div>
+<!-- Main Food Section with Target ID for Scroll Anchor -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6" id="recent-reviews-section"><div class="flex items-center justify-between mb-6"><div><h3 class="font-serif text-2xl font-bold text-brand">Đánh giá mới nhất</h3><p class="text-xs text-gray-500">Cộng đồng sinh viên chia sẻ chân thật</p></div><button class="text-xs font-bold text-brand hover:underline flex items-center gap-1" onclick="navigateTo('community')">Xem tất cả <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-right" aria-hidden="true" class="lucide lucide-arrow-right w-3.5 h-3.5"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div class="bg-white p-5 rounded-2xl border border-[#e8e2d5] shadow-sm flex flex-col justify-between"><div><div class="flex items-center justify-between mb-3"><div class="flex items-center gap-3"><img alt="Ngọc Anh" class="w-10 h-10 rounded-full object-cover" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"><div><h4 class="text-sm font-bold text-gray-900 leading-tight">Ngọc Anh</h4><p class="text-[11px] text-gray-500">SV ĐH Khoa học Tự nhiên • 2 ngày trước</p></div></div><div class="flex items-center text-amber-500 text-xs font-bold gap-1 bg-amber-50 px-2 py-0.5 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3.5 h-3.5 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 5/5</div></div><p class="text-xs text-gray-700 leading-relaxed">"Cơm tấm Đêm ngon, sườn ướp đậm đà, cơm dẻo, phần ăn nhiều mà giá rất hợp lý cho sinh viên KTX. Rất đáng ghé thử sau giờ học ca tối!"</p></div><div class="flex items-center justify-between pt-4 mt-4 border-t border-gray-100 text-xs text-gray-500"><button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand/20 bg-emerald-50/50 hover:bg-emerald-100/60 text-gray-700 hover:text-brand text-xs font-medium transition-all active:scale-95 shadow-sm" onclick="toggleHelpful(this)" data-voted=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="thumbs-up" aria-hidden="true" class="lucide lucide-thumbs-up w-3.5 h-3.5 transition-transform"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path><path d="M7 10v12"></path></svg> <span>Hữu ích (12)</span></button><button class="hover:text-red-600 transition flex items-center gap-1" onclick="reportItem('review-1')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="flag" aria-hidden="true" class="lucide lucide-flag w-3.5 h-3.5"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg> Báo cáo</button></div></div><div class="bg-white p-5 rounded-2xl border border-[#e8e2d5] shadow-sm flex flex-col justify-between"><div><div class="flex items-center justify-between mb-3"><div class="flex items-center gap-3"><img alt="Minh Quân" class="w-10 h-10 rounded-full object-cover" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"><div><h4 class="text-sm font-bold text-gray-900 leading-tight">Minh Quân</h4><p class="text-[11px] text-gray-500">SV ĐH Bách Khoa • 4 ngày trước</p></div></div><div class="flex items-center text-amber-500 text-xs font-bold gap-1 bg-amber-50 px-2 py-0.5 rounded-md"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3.5 h-3.5 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.5/5</div></div><p class="text-xs text-gray-700 leading-relaxed">"Lẩu cá 44 nước lẩu chua ngọt vừa miệng, cá tươi, rau nhiều. Phù hợp đi nhóm bạn 4-5 người chia tiền ra rất rẻ. Quán khá đông nên nên đến sớm."</p></div><div class="flex items-center justify-between pt-4 mt-4 border-t border-gray-100 text-xs text-gray-500"><button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand/20 bg-emerald-50/50 hover:bg-emerald-100/60 text-gray-700 hover:text-brand text-xs font-medium transition-all active:scale-95 shadow-sm" onclick="toggleHelpful(this)" data-voted=""><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="thumbs-up" aria-hidden="true" class="lucide lucide-thumbs-up w-3.5 h-3.5 transition-transform"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path><path d="M7 10v12"></path></svg> <span>Hữu ích (8)</span></button><button class="hover:text-red-600 transition flex items-center gap-1" onclick="reportItem('review-2')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="flag" aria-hidden="true" class="lucide lucide-flag w-3.5 h-3.5"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg> Báo cáo</button></div></div></div></section><section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" id="food-list-anchor">
+<!-- Header row of the section -->
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 pb-4 border-b border-[#e8e2d5]">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-serif text-2xl sm:text-3xl font-bold text-brand">Địa điểm nổi bật</h2>
+<span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand/10 text-brand" id="page-display-label">Trang 1 / 3</span>
+</div>
+<p class="text-xs text-gray-500 mt-1 italic">Giá hiển thị là thông tin tham khảo từ trải nghiệm thực tế của sinh viên.</p>
+</div>
+
+</div>
+<!-- Filter tags row -->
+<div class="hidden mb-6 flex items-center gap-2 flex-wrap" id="filter-tags-bar">
+<span class="text-xs font-bold text-gray-500">Đang lọc theo:</span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand text-white text-xs font-medium" id="active-tag-badge">
+<span id="active-tag-text">Cơm tấm</span>
+<button class="hover:text-amber-300" onclick="clearFilter()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x w-3.5 h-3.5"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</span>
+</div>
+<!-- Cards Grid (Dynamic Paginated) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" id="food-grid" style="opacity: 1; transform: translateY(0px); transition: opacity 180ms, transform 180ms;"><div class="food-card bg-white rounded-3xl border border-[#e8e2d5] overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer group relative" style="transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1);">
+          <div onclick="selectShopById('banh-trang')">
+            <!-- Image Frame -->
+            <div class="relative h-48 sm:h-52 w-full overflow-hidden bg-gray-100">
+              <img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=600&amp;q=80" alt="Quán Bánh Tráng Nướng" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+              
+              <!-- Category Badge -->
+              <span class="absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full bg-brand/90 backdrop-blur-md text-white text-[11px] font-semibold tracking-wide">
+                Ăn vặt
+              </span>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-5">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-serif text-base sm:text-lg font-bold text-gray-900 group-hover:text-brand transition truncate pr-2">
+                  Quán Bánh Tráng Nướng
+                </h3>
+              </div>
+
+              <!-- Rating & Reviews -->
+              <div class="flex items-center gap-1.5 text-xs text-gray-600 mb-3">
+                <span class="flex items-center gap-1 font-bold text-amber-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3.5 h-3.5 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.6
+                </span>
+                <span class="text-gray-400">(24 đánh giá)</span>
+              </div>
+
+              <!-- Meta Info -->
+              <div class="space-y-1.5 text-xs text-gray-600">
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="tag" aria-hidden="true" class="lucide lucide-tag w-3.5 h-3.5 text-brand flex-shrink-0"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
+                  <span class="font-semibold text-gray-800">15.000–25.000đ</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map-pin" aria-hidden="true" class="lucide lucide-map-pin w-3.5 h-3.5 text-gray-400 flex-shrink-0"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <span class="text-gray-500 truncate">KTX Khu A</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="px-5 pb-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-1">
+            <button onclick="selectShopById('banh-trang')" class="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+              Xem chi tiết <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="chevron-right" aria-hidden="true" class="lucide lucide-chevron-right w-3.5 h-3.5"><path d="m9 18 6-6-6-6"></path></svg>
+            </button>
+
+            <!-- Save Bookmark Button -->
+            <button onclick="toggleCardSave(event, 'banh-trang')" class="p-2 rounded-xl border border-gray-200 hover:border-brand bg-white text-gray-500 hover:text-brand transition text-brand border-brand/60 bg-brand/5" title="Đã lưu">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bookmark" aria-hidden="true" class="lucide lucide-bookmark w-4 h-4 fill-brand text-brand"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"></path></svg>
+            </button>
+          </div>
+        </div><div class="food-card bg-white rounded-3xl border border-[#e8e2d5] overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer group relative" style="transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1);">
+          <div onclick="selectShopById('tra-sua')">
+            <!-- Image Frame -->
+            <div class="relative h-48 sm:h-52 w-full overflow-hidden bg-gray-100">
+              <img src="https://images.unsplash.com/photo-1558857563-b37fe4355328?auto=format&amp;fit=crop&amp;w=600&amp;q=80" alt="Tiệm Trà Sữa Trân Châu" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+              
+              <!-- Category Badge -->
+              <span class="absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full bg-brand/90 backdrop-blur-md text-white text-[11px] font-semibold tracking-wide">
+                Trà sữa
+              </span>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-5">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-serif text-base sm:text-lg font-bold text-gray-900 group-hover:text-brand transition truncate pr-2">
+                  Tiệm Trà Sữa Trân Châu
+                </h3>
+              </div>
+
+              <!-- Rating & Reviews -->
+              <div class="flex items-center gap-1.5 text-xs text-gray-600 mb-3">
+                <span class="flex items-center gap-1 font-bold text-amber-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3.5 h-3.5 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.5
+                </span>
+                <span class="text-gray-400">(18 đánh giá)</span>
+              </div>
+
+              <!-- Meta Info -->
+              <div class="space-y-1.5 text-xs text-gray-600">
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="tag" aria-hidden="true" class="lucide lucide-tag w-3.5 h-3.5 text-brand flex-shrink-0"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
+                  <span class="font-semibold text-gray-800">25.000–40.000đ</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map-pin" aria-hidden="true" class="lucide lucide-map-pin w-3.5 h-3.5 text-gray-400 flex-shrink-0"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <span class="text-gray-500 truncate">UIT</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="px-5 pb-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-1">
+            <button onclick="selectShopById('tra-sua')" class="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+              Xem chi tiết <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="chevron-right" aria-hidden="true" class="lucide lucide-chevron-right w-3.5 h-3.5"><path d="m9 18 6-6-6-6"></path></svg>
+            </button>
+
+            <!-- Save Bookmark Button -->
+            <button onclick="toggleCardSave(event, 'tra-sua')" class="p-2 rounded-xl border border-gray-200 hover:border-brand bg-white text-gray-500 hover:text-brand transition " title="Lưu quán">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bookmark" aria-hidden="true" class="lucide lucide-bookmark w-4 h-4"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"></path></svg>
+            </button>
+          </div>
+        </div><div class="food-card bg-white rounded-3xl border border-[#e8e2d5] overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer group relative">
+          <div onclick="selectShopById('lau-ca')">
+            <!-- Image Frame -->
+            <div class="relative h-48 sm:h-52 w-full overflow-hidden bg-gray-100">
+              <img src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&amp;fit=crop&amp;w=600&amp;q=80" alt="Lẩu cá 44 Làng ĐH" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+              
+              <!-- Category Badge -->
+              <span class="absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full bg-brand/90 backdrop-blur-md text-white text-[11px] font-semibold tracking-wide">
+                Lẩu &amp; Nướng
+              </span>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-5">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-serif text-base sm:text-lg font-bold text-gray-900 group-hover:text-brand transition truncate pr-2">
+                  Lẩu cá 44 Làng ĐH
+                </h3>
+              </div>
+
+              <!-- Rating & Reviews -->
+              <div class="flex items-center gap-1.5 text-xs text-gray-600 mb-3">
+                <span class="flex items-center gap-1 font-bold text-amber-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3.5 h-3.5 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.8
+                </span>
+                <span class="text-gray-400">(32 đánh giá)</span>
+              </div>
+
+              <!-- Meta Info -->
+              <div class="space-y-1.5 text-xs text-gray-600">
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="tag" aria-hidden="true" class="lucide lucide-tag w-3.5 h-3.5 text-brand flex-shrink-0"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
+                  <span class="font-semibold text-gray-800">45.000–70.000đ</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map-pin" aria-hidden="true" class="lucide lucide-map-pin w-3.5 h-3.5 text-gray-400 flex-shrink-0"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <span class="text-gray-500 truncate">KTX Khu B</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="px-5 pb-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-1">
+            <button onclick="selectShopById('lau-ca')" class="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+              Xem chi tiết <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="chevron-right" aria-hidden="true" class="lucide lucide-chevron-right w-3.5 h-3.5"><path d="m9 18 6-6-6-6"></path></svg>
+            </button>
+
+            <!-- Save Bookmark Button -->
+            <button onclick="toggleCardSave(event, 'lau-ca')" class="p-2 rounded-xl border border-gray-200 hover:border-brand bg-white text-gray-500 hover:text-brand transition text-brand border-brand/60 bg-brand/5" title="Đã lưu">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bookmark" aria-hidden="true" class="lucide lucide-bookmark w-4 h-4 fill-brand text-brand"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"></path></svg>
+            </button>
+          </div>
+        </div><div class="food-card bg-white rounded-3xl border border-[#e8e2d5] overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer group relative" style="transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1);">
+          <div onclick="selectShopById('com-tam')">
+            <!-- Image Frame -->
+            <div class="relative h-48 sm:h-52 w-full overflow-hidden bg-gray-100">
+              <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&amp;fit=crop&amp;w=600&amp;q=80" alt="Cơm tấm Đêm Khu B" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+              
+              <!-- Category Badge -->
+              <span class="absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full bg-brand/90 backdrop-blur-md text-white text-[11px] font-semibold tracking-wide">
+                Cơm - Bún
+              </span>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-5">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-serif text-base sm:text-lg font-bold text-gray-900 group-hover:text-brand transition truncate pr-2">
+                  Cơm tấm Đêm Khu B
+                </h3>
+              </div>
+
+              <!-- Rating & Reviews -->
+              <div class="flex items-center gap-1.5 text-xs text-gray-600 mb-3">
+                <span class="flex items-center gap-1 font-bold text-amber-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3.5 h-3.5 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.7
+                </span>
+                <span class="text-gray-400">(28 đánh giá)</span>
+              </div>
+
+              <!-- Meta Info -->
+              <div class="space-y-1.5 text-xs text-gray-600">
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="tag" aria-hidden="true" class="lucide lucide-tag w-3.5 h-3.5 text-brand flex-shrink-0"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
+                  <span class="font-semibold text-gray-800">25.000–40.000đ</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map-pin" aria-hidden="true" class="lucide lucide-map-pin w-3.5 h-3.5 text-gray-400 flex-shrink-0"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <span class="text-gray-500 truncate">KTX Khu B</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="px-5 pb-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-1">
+            <button onclick="selectShopById('com-tam')" class="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+              Xem chi tiết <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="chevron-right" aria-hidden="true" class="lucide lucide-chevron-right w-3.5 h-3.5"><path d="m9 18 6-6-6-6"></path></svg>
+            </button>
+
+            <!-- Save Bookmark Button -->
+            <button onclick="toggleCardSave(event, 'com-tam')" class="p-2 rounded-xl border border-gray-200 hover:border-brand bg-white text-gray-500 hover:text-brand transition " title="Lưu quán">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bookmark" aria-hidden="true" class="lucide lucide-bookmark w-4 h-4"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"></path></svg>
+            </button>
+          </div>
+        </div><div class="food-card bg-white rounded-3xl border border-[#e8e2d5] overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer group relative" style="transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1);">
+          <div onclick="selectShopById('bun-bo')">
+            <!-- Image Frame -->
+            <div class="relative h-48 sm:h-52 w-full overflow-hidden bg-gray-100">
+              <img src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&amp;fit=crop&amp;w=600&amp;q=80" alt="Quán Bún Bò Huế O Mai" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+              
+              <!-- Category Badge -->
+              <span class="absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full bg-brand/90 backdrop-blur-md text-white text-[11px] font-semibold tracking-wide">
+                Cơm - Bún
+              </span>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-5">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-serif text-base sm:text-lg font-bold text-gray-900 group-hover:text-brand transition truncate pr-2">
+                  Quán Bún Bò Huế O Mai
+                </h3>
+              </div>
+
+              <!-- Rating & Reviews -->
+              <div class="flex items-center gap-1.5 text-xs text-gray-600 mb-3">
+                <span class="flex items-center gap-1 font-bold text-amber-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3.5 h-3.5 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.6
+                </span>
+                <span class="text-gray-400">(21 đánh giá)</span>
+              </div>
+
+              <!-- Meta Info -->
+              <div class="space-y-1.5 text-xs text-gray-600">
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="tag" aria-hidden="true" class="lucide lucide-tag w-3.5 h-3.5 text-brand flex-shrink-0"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
+                  <span class="font-semibold text-gray-800">30.000–45.000đ</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map-pin" aria-hidden="true" class="lucide lucide-map-pin w-3.5 h-3.5 text-gray-400 flex-shrink-0"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <span class="text-gray-500 truncate">Chợ đêm</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="px-5 pb-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-1">
+            <button onclick="selectShopById('bun-bo')" class="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+              Xem chi tiết <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="chevron-right" aria-hidden="true" class="lucide lucide-chevron-right w-3.5 h-3.5"><path d="m9 18 6-6-6-6"></path></svg>
+            </button>
+
+            <!-- Save Bookmark Button -->
+            <button onclick="toggleCardSave(event, 'bun-bo')" class="p-2 rounded-xl border border-gray-200 hover:border-brand bg-white text-gray-500 hover:text-brand transition " title="Lưu quán">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bookmark" aria-hidden="true" class="lucide lucide-bookmark w-4 h-4"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"></path></svg>
+            </button>
+          </div>
+        </div><div class="food-card bg-white rounded-3xl border border-[#e8e2d5] overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer group relative" style="transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1);">
+          <div onclick="selectShopById('xien-nuong')">
+            <!-- Image Frame -->
+            <div class="relative h-48 sm:h-52 w-full overflow-hidden bg-gray-100">
+              <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&amp;fit=crop&amp;w=600&amp;q=80" alt="Quán Xiên Nướng Phố Đêm" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+              
+              <!-- Category Badge -->
+              <span class="absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full bg-brand/90 backdrop-blur-md text-white text-[11px] font-semibold tracking-wide">
+                Lẩu &amp; Nướng
+              </span>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-5">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-serif text-base sm:text-lg font-bold text-gray-900 group-hover:text-brand transition truncate pr-2">
+                  Quán Xiên Nướng Phố Đêm
+                </h3>
+              </div>
+
+              <!-- Rating & Reviews -->
+              <div class="flex items-center gap-1.5 text-xs text-gray-600 mb-3">
+                <span class="flex items-center gap-1 font-bold text-amber-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3.5 h-3.5 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.5
+                </span>
+                <span class="text-gray-400">(16 đánh giá)</span>
+              </div>
+
+              <!-- Meta Info -->
+              <div class="space-y-1.5 text-xs text-gray-600">
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="tag" aria-hidden="true" class="lucide lucide-tag w-3.5 h-3.5 text-brand flex-shrink-0"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
+                  <span class="font-semibold text-gray-800">15.000–35.000đ</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map-pin" aria-hidden="true" class="lucide lucide-map-pin w-3.5 h-3.5 text-gray-400 flex-shrink-0"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <span class="text-gray-500 truncate">Chợ đêm</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="px-5 pb-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-1">
+            <button onclick="selectShopById('xien-nuong')" class="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+              Xem chi tiết <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="chevron-right" aria-hidden="true" class="lucide lucide-chevron-right w-3.5 h-3.5"><path d="m9 18 6-6-6-6"></path></svg>
+            </button>
+
+            <!-- Save Bookmark Button -->
+            <button onclick="toggleCardSave(event, 'xien-nuong')" class="p-2 rounded-xl border border-gray-200 hover:border-brand bg-white text-gray-500 hover:text-brand transition " title="Lưu quán">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bookmark" aria-hidden="true" class="lucide lucide-bookmark w-4 h-4"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"></path></svg>
+            </button>
+          </div>
+        </div></div>
+<!-- Pagination Controls -->
+<div class="mt-12 flex flex-col items-center gap-3"><div class="flex items-center gap-2"><button class="w-8 h-8 rounded-md p-0 text-gray-400 hover:text-brand hover:bg-gray-100 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer page-btn-base" id="btn-prev-page" onclick="changePage('prev')" disabled="" style="display: grid; place-items: center; width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px; padding: 0px; line-height: 1; text-align: center; border-radius: 6px; box-sizing: border-box;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="chevron-left" aria-hidden="true" class="lucide lucide-chevron-left w-4 h-4"><path d="m15 18-6-6 6-6"></path></svg></button><button class="w-8 h-8 rounded-md p-0 text-sm transition cursor-pointer page-btn-base bg-brand text-white font-bold shadow-sm" id="page-num-1" onclick="goToPage(1)" style="display: grid; place-items: center; width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px; padding: 0px; line-height: 1; text-align: center; border-radius: 6px; box-sizing: border-box;">1</button><button class="w-8 h-8 rounded-md p-0 text-sm transition cursor-pointer page-btn-base bg-transparent text-gray-700 font-medium hover:bg-gray-100 hover:text-brand" id="page-num-2" onclick="goToPage(2)" style="display: grid; place-items: center; width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px; padding: 0px; line-height: 1; text-align: center; border-radius: 6px; box-sizing: border-box;">2</button><button class="w-8 h-8 rounded-md p-0 text-sm transition cursor-pointer page-btn-base bg-transparent text-gray-700 font-medium hover:bg-gray-100 hover:text-brand" id="page-num-3" onclick="goToPage(3)" style="display: grid; place-items: center; width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px; padding: 0px; line-height: 1; text-align: center; border-radius: 6px; box-sizing: border-box;">3</button><button class="w-8 h-8 rounded-md p-0 text-gray-600 hover:text-brand hover:bg-gray-100 transition cursor-pointer page-btn-base" id="btn-next-page" onclick="changePage('next')" style="display: grid; place-items: center; width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px; padding: 0px; line-height: 1; text-align: center; border-radius: 6px; box-sizing: border-box;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="chevron-right" aria-hidden="true" class="lucide lucide-chevron-right w-4 h-4"><path d="m9 18 6-6-6-6"></path></svg></button></div><p class="text-xs text-gray-400 mt-2">Hiển thị 6 / 18 quán được tuyển chọn</p></div>
+<!-- Recent Reviews Block -->
+
+</section>
+</section>
+<!-- ================= VIEW 2: CHI TIẾT QUÁN ================= -->
+<section class="page-view" id="view-detail">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Breadcrumbs & Back Button -->
+<div class="flex items-center justify-between mb-6">
+<button class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-[#e8e2d5] bg-white hover:bg-brand/5 text-brand text-xs font-bold transition" onclick="goBackFromDetail()">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-left" aria-hidden="true" class="lucide lucide-arrow-left w-4 h-4"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg> Quay lại danh sách
+          </button>
+<div class="flex items-center gap-2">
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#e8e2d5] hover:border-brand text-gray-700 text-xs font-bold transition shadow-sm" id="detail-save-btn" onclick="toggleDetailSave()">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bookmark" aria-hidden="true" class="lucide lucide-bookmark w-4 h-4 text-brand" id="detail-save-icon"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"></path></svg>
+<span id="detail-save-text">Đã lưu quán</span>
+</button>
+
+</div>
+</div>
+<!-- Detail Hero Card -->
+<div class="bg-white rounded-3xl border border-[#e8e2d5] overflow-hidden shadow-xl mb-8">
+<div class="relative h-72 sm:h-96 w-full">
+<img alt="Ảnh quán" class="w-full h-full object-cover" id="detail-img" src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=600&amp;q=80">
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6 text-white">
+<div class="flex flex-wrap items-center gap-2 mb-2">
+<span class="px-3 py-1 rounded-full bg-brand text-emerald-200 text-xs font-bold" id="detail-category">Ăn vặt</span>
+<span class="px-3 py-1 rounded-full bg-emerald-500/80 backdrop-blur-md text-white text-xs font-semibold" id="detail-status">Đang mở cửa</span>
+</div>
+<h1 class="font-serif text-2xl sm:text-4xl font-bold tracking-tight mb-2" id="detail-title">Quán Bánh Tráng Nướng</h1>
+<div class="flex flex-wrap items-center gap-4 text-xs text-gray-200">
+<span class="flex items-center gap-1 font-bold text-amber-400">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-4 h-4 fill-amber-400"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> <span id="detail-rating">4.6</span> (<span id="detail-reviews-count">24</span> đánh giá)
+                </span>
+<span>•</span>
+<span class="flex items-center gap-1">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map-pin" aria-hidden="true" class="lucide lucide-map-pin w-3.5 h-3.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg> <span id="detail-location">KTX Khu A</span>
+</span>
+<span>•</span>
+<span class="flex items-center gap-1 text-emerald-300 font-bold">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="tag" aria-hidden="true" class="lucide lucide-tag w-3.5 h-3.5"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg> <span id="detail-price">15.000–25.000đ</span>
+</span>
+</div>
+</div>
+</div>
+<!-- Info Tabs & Content -->
+<div class="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-2 space-y-6">
+<div>
+<h3 class="font-serif text-lg font-bold text-brand mb-2">Giới thiệu quán</h3>
+<p class="text-sm text-gray-600 leading-relaxed" id="detail-desc">
+                  Địa điểm ăn uống quen thuộc của các thế hệ sinh viên ĐHQG TP.HCM. Hương vị chuẩn vị, không gian thoáng đãng, phục vụ nhanh nhẹn và giá cả vừa túi tiền sinh viên.
+                </p>
+</div>
+<!-- Menu Highlights -->
+<div>
+<h3 class="font-serif text-lg font-bold text-brand mb-3">Món bán chạy nhất</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="detail-specialties">
+          <div class="flex items-center gap-2 p-3 rounded-xl bg-[#fcfaf6] border border-[#e8e2d5]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="check" aria-hidden="true" class="lucide lucide-check w-4 h-4 text-brand"><path d="M20 6 9 17l-5-5"></path></svg>
+            <span class="text-xs font-semibold text-gray-800">Bánh tráng nướng phô mai</span>
+          </div>
+        
+          <div class="flex items-center gap-2 p-3 rounded-xl bg-[#fcfaf6] border border-[#e8e2d5]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="check" aria-hidden="true" class="lucide lucide-check w-4 h-4 text-brand"><path d="M20 6 9 17l-5-5"></path></svg>
+            <span class="text-xs font-semibold text-gray-800">Bánh tráng lụi bò</span>
+          </div>
+        
+          <div class="flex items-center gap-2 p-3 rounded-xl bg-[#fcfaf6] border border-[#e8e2d5]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="check" aria-hidden="true" class="lucide lucide-check w-4 h-4 text-brand"><path d="M20 6 9 17l-5-5"></path></svg>
+            <span class="text-xs font-semibold text-gray-800">Cút nướng bơ</span>
+          </div>
+        </div>
+</div>
+<!-- Community Reviews for this shop -->
+<div class="pt-6 border-t border-gray-100">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-serif text-lg font-bold text-brand">Đánh giá từ sinh viên</h3>
+
+</div>
+<div class="space-y-4"><div class="p-4 rounded-2xl bg-white border border-[#e8e2d5] shadow-sm mb-4"><div class="flex items-center gap-2 mb-2"><img src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg" alt="User" class="w-7 h-7 rounded-full object-cover ring-1 ring-brand/20"><span class="text-xs font-semibold text-gray-800">Đăng nhận xét với tên Lan Anh</span></div><textarea rows="2" class="w-full p-3 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-brand resize-none placeholder-gray-400" placeholder="Nhập bình luận hoặc nhận xét món ăn của bạn..."></textarea><div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100"><label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 hover:text-brand text-xs font-medium cursor-pointer transition"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="camera" aria-hidden="true" class="lucide lucide-camera w-3.5 h-3.5 text-brand"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"></path><circle cx="12" cy="13" r="3"></circle></svg><span>Thêm ảnh</span><input type="file" accept="image/*" class="hidden"></label><button type="button" onclick="showToast('Bình luận của bạn đã được đăng tải!')" class="inline-flex items-center gap-1 px-4 py-1.5 rounded-xl bg-brand hover:bg-brand-light text-white text-xs font-bold transition shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="send" aria-hidden="true" class="lucide lucide-send w-3.5 h-3.5"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path><path d="m21.854 2.147-10.94 10.939"></path></svg><span>Gửi bình luận</span></button></div></div>
+<div class="p-4 rounded-xl bg-[#fcfaf6] border border-[#e8e2d5]">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-gray-800">Hoàng Nam • SV UIT</span>
+<span class="text-xs text-amber-500 font-bold flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 5.0</span>
+</div>
+<p class="text-xs text-gray-600">"Quán phục vụ rất nhanh, trà đá miễn phí, đồ ăn nóng hổi thích hợp ghé ăn trưa sau giờ học!"</p>
+<div class="flex items-center justify-between pt-3 mt-3 border-t border-gray-100/80"><button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand/20 bg-emerald-50/50 hover:bg-emerald-100/60 text-gray-700 hover:text-brand text-xs font-medium transition-all active:scale-95 shadow-sm" onclick="toggleHelpful(this)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="thumbs-up" aria-hidden="true" class="lucide lucide-thumbs-up w-3.5 h-3.5"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path><path d="M7 10v12"></path></svg> <span>Hữu ích (5)</span></button><button class="text-xs text-gray-400 hover:text-red-500 transition flex items-center gap-1" onclick="reportItem('review-detail-1')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="flag" aria-hidden="true" class="lucide lucide-flag w-3 h-3"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg> <span>Báo cáo</span></button></div></div>
+</div>
+</div>
+</div>
+<!-- Sidebar Info -->
+<div class="space-y-6">
+<div class="bg-[#f7f4ed] p-5 rounded-2xl border border-[#e8e2d5]">
+<h4 class="text-xs font-bold uppercase tracking-wider text-brand mb-4">Thông tin thực tế</h4>
+<div class="space-y-3 text-xs">
+<div class="flex items-start gap-2.5">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="clock" aria-hidden="true" class="lucide lucide-clock w-4 h-4 text-brand mt-0.5"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+<div>
+<span class="font-semibold text-gray-800 block">Giờ mở cửa</span>
+<span class="text-gray-500">10:00 - 22:30 hàng ngày</span>
+</div>
+</div>
+<div class="flex items-start gap-2.5">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map" aria-hidden="true" class="lucide lucide-map w-4 h-4 text-brand mt-0.5"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"></path><path d="M15 5.764v15"></path><path d="M9 3.236v15"></path></svg>
+<div>
+<span class="font-semibold text-gray-800 block">Vị trí</span>
+<span class="text-gray-500" id="detail-full-address">Đường số 8, Phường Linh Trung, Thủ Đức (KTX Khu A)</span>
+</div>
+</div>
+<div class="flex items-start gap-2.5">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="wifi" aria-hidden="true" class="lucide lucide-wifi w-4 h-4 text-brand mt-0.5"><path d="M12 20h.01"></path><path d="M2 8.82a15 15 0 0 1 20 0"></path><path d="M5 12.859a10 10 0 0 1 14 0"></path><path d="M8.5 16.429a5 5 0 0 1 7 0"></path></svg>
+<div>
+<span class="font-semibold text-gray-800 block">Tiện ích</span>
+<span class="text-gray-500">Wifi miễn phí, Chỗ để xe SV, Trà đá free</span>
+</div>
+</div>
+</div>
+<div class="mt-5 pt-4 border-t border-[#e8e2d5]">
+<p class="text-[11px] text-gray-500 italic leading-snug">
+                    * Giá và thời gian có thể thay đổi nhẹ tùy thời điểm.
+                  </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= VIEW 3: ĐỊA ĐIỂM (SPLIT MAP) ================= -->
+<section class="page-view" id="view-places">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+<div>
+<h2 class="font-serif text-2xl sm:text-3xl font-bold text-brand">Khám phá Địa điểm Ẩm thực</h2>
+<p class="text-xs text-gray-500 mt-1">Tuyển tập quán ăn chuẩn vị, hợp túi tiền sinh viên trải dài khắp KTX Khu A, Khu B, UIT, Chợ Đêm...</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 28 địa điểm hoạt động
+            </span>
+</div>
+</div>
+<!-- Filter Pills Bar -->
+<div class="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
+<button class="px-3.5 py-1.5 rounded-full text-xs font-bold transition bg-brand text-white shadow-sm flex-shrink-0" onclick="filterByArea('all')">Tất cả</button>
+<button class="px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-700 bg-white border border-[#e8e2d5] hover:border-brand flex-shrink-0" onclick="filterByArea('KTX Khu A')">Gần KTX Khu A</button>
+<button class="px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-700 bg-white border border-[#e8e2d5] hover:border-brand flex-shrink-0" onclick="filterByArea('KTX Khu B')">Gần KTX Khu B</button>
+<button class="px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-700 bg-white border border-[#e8e2d5] hover:border-brand flex-shrink-0" onclick="filterByArea('UIT')">Cụm UIT - KHTN</button>
+<button class="px-3.5 py-1.5 rounded-full text-xs font-semibold text-gray-700 bg-white border border-[#e8e2d5] hover:border-brand flex-shrink-0" onclick="filterByArea('Chợ đêm')">Chợ đêm Làng ĐH</button>
+</div>
+<!-- Split Grid: Place List Left + Interactive Graphic Map Right -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Left: Places List (7 Cols) -->
+<div class="lg:col-span-7 space-y-4" id="places-full-list">
+          <div onclick="selectShopById('banh-trang')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Ăn vặt</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.6</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Quán Bánh Tráng Nướng</h4>
+                <p class="text-xs text-gray-500 mt-0.5">KTX Khu A</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">15.000–25.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('tra-sua')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1558857563-b37fe4355328?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Trà sữa</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.5</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Tiệm Trà Sữa Trân Châu</h4>
+                <p class="text-xs text-gray-500 mt-0.5">UIT</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">25.000–40.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('lau-ca')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Lẩu &amp; Nướng</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.8</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Lẩu cá 44 Làng ĐH</h4>
+                <p class="text-xs text-gray-500 mt-0.5">KTX Khu B</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">45.000–70.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('com-tam')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Cơm - Bún</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.7</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Cơm tấm Đêm Khu B</h4>
+                <p class="text-xs text-gray-500 mt-0.5">KTX Khu B</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">25.000–40.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('bun-bo')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Cơm - Bún</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.6</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Quán Bún Bò Huế O Mai</h4>
+                <p class="text-xs text-gray-500 mt-0.5">Chợ đêm</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">30.000–45.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('xien-nuong')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Lẩu &amp; Nướng</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.5</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Quán Xiên Nướng Phố Đêm</h4>
+                <p class="text-xs text-gray-500 mt-0.5">Chợ đêm</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">15.000–35.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('banh-canh')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Cơm - Bún</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.4</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Bánh Canh Ghẹ Cổng Khu A</h4>
+                <p class="text-xs text-gray-500 mt-0.5">KTX Khu A</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">30.000–40.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('che-cung-dinh')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Ăn vặt</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.7</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Chè Cung Đình 20 Món</h4>
+                <p class="text-xs text-gray-500 mt-0.5">UIT</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">12.000–20.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('sup-cua')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Ăn vặt</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.8</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Súp Cua Bách Khoa</h4>
+                <p class="text-xs text-gray-500 mt-0.5">UIT</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">20.000–30.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('com-ga')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Cơm - Bún</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.5</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Cơm Gà Xối Mỡ Da Giòn</h4>
+                <p class="text-xs text-gray-500 mt-0.5">KTX Khu B</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">28.000–38.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('tra-dao')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Trà sữa</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.6</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Trà Đào Dầm Hồ Đá</h4>
+                <p class="text-xs text-gray-500 mt-0.5">Chợ đêm</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">15.000–25.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('mi-cay')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Cơm - Bún</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.3</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Mì Cay Seoul 7 Cấp Độ</h4>
+                <p class="text-xs text-gray-500 mt-0.5">KTX Khu A</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">35.000–55.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('pho-ha-noi')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Cơm - Bún</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.7</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Phở Bắc Gia Truyền</h4>
+                <p class="text-xs text-gray-500 mt-0.5">KTX Khu A</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">30.000–45.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('nem-nuong')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Ăn vặt</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.6</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Nem Nướng Nha Trang Cô Ba</h4>
+                <p class="text-xs text-gray-500 mt-0.5">Chợ đêm</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">30.000–40.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('lau-bo')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Lẩu &amp; Nướng</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.9</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Lẩu Bò Ba Toa</h4>
+                <p class="text-xs text-gray-500 mt-0.5">KTX Khu B</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">50.000–80.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('tra-trai-cay')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1558857563-b37fe4355328?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Trà sữa</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.5</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Tiệm Sinh Tố Trái Cây Tô</h4>
+                <p class="text-xs text-gray-500 mt-0.5">UIT</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">20.000–30.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('banh-mi-chao')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Cơm - Bún</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.4</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Bánh Mì Chảo 2 Trứng</h4>
+                <p class="text-xs text-gray-500 mt-0.5">KTX Khu A</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">20.000–35.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        
+          <div onclick="selectShopById('kem-bo')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&amp;fit=crop&amp;w=600&amp;q=80" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">Ăn vặt</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3 h-3 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.8</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">Kem Bơ Sáp Đà Lạt</h4>
+                <p class="text-xs text-gray-500 mt-0.5">Chợ đêm</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">20.000–25.000đ</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        </div>
+<!-- Right: Interactive Map Simulation (5 Cols) Sticky -->
+<div class="lg:col-span-5 sticky top-28">
+<div class="bg-white rounded-3xl border border-[#e8e2d5] p-5 shadow-lg overflow-hidden">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="map" aria-hidden="true" class="lucide lucide-map w-4 h-4 text-brand"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"></path><path d="M15 5.764v15"></path><path d="M9 3.236v15"></path></svg>
+<h3 class="font-serif text-sm font-bold text-brand">Bản đồ Ẩm thực Làng ĐH</h3>
+</div>
+<span class="text-[11px] font-semibold text-gray-400">Tọa độ ĐHQG-HCM</span>
+</div>
+<!-- Map Visual Graphic -->
+<div class="relative w-full h-80 rounded-2xl bg-[#ecf6f2] border border-[#d2dcd9] overflow-hidden flex items-center justify-center">
+<!-- SVG map styling grid -->
+<svg class="absolute inset-0 w-full h-full opacity-40" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="40" id="grid-pattern" patternUnits="userSpaceOnUse" width="40">
+<path d="M 40 0 L 0 0 0 40" fill="none" stroke="#183b30" stroke-width="0.5"></path>
+</pattern>
+</defs>
+<rect fill="url(#grid-pattern)" height="100%" width="100%"></rect>
+<!-- Roads -->
+<path d="M 0 100 Q 150 120 300 80 T 500 150" fill="none" stroke="#cbdad5" stroke-width="12"></path>
+<path d="M 120 0 Q 140 200 180 320" fill="none" stroke="#cbdad5" stroke-width="10"></path>
+<path d="M 280 0 L 250 320" fill="none" stroke="#cbdad5" stroke-width="8"></path>
+</svg>
+<!-- Map Pins -->
+<button class="group absolute top-1/4 left-1/4 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" onclick="selectShopById('com-tam')">
+<span class="px-2 py-0.5 rounded-md bg-brand text-white text-[10px] font-bold shadow-md whitespace-nowrap group-hover:scale-110 transition">Cơm tấm Đêm • 25k</span>
+<div class="w-3 h-3 bg-brand rotate-45 -mt-1 shadow-md"></div>
+</button>
+<button class="group absolute top-1/3 right-1/4 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" onclick="selectShopById('tra-sua')">
+<span class="px-2 py-0.5 rounded-md bg-amber-600 text-white text-[10px] font-bold shadow-md whitespace-nowrap group-hover:scale-110 transition">Trà sữa • 25k</span>
+<div class="w-3 h-3 bg-amber-600 rotate-45 -mt-1 shadow-md"></div>
+</button>
+<button class="group absolute bottom-1/4 left-1/3 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" onclick="selectShopById('lau-ca')">
+<span class="px-2 py-0.5 rounded-md bg-emerald-700 text-white text-[10px] font-bold shadow-md whitespace-nowrap group-hover:scale-110 transition">Lẩu cá 44 • 50k</span>
+<div class="w-3 h-3 bg-emerald-700 rotate-45 -mt-1 shadow-md"></div>
+</button>
+<button class="group absolute bottom-1/3 right-1/3 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" onclick="selectShopById('banh-trang')">
+<span class="px-2 py-0.5 rounded-md bg-red-600 text-white text-[10px] font-bold shadow-md whitespace-nowrap group-hover:scale-110 transition">Bánh tráng nướng</span>
+<div class="w-3 h-3 bg-red-600 rotate-45 -mt-1 shadow-md"></div>
+</button>
+<!-- Center Compass -->
+<div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-xl border border-gray-200 text-center shadow-sm">
+<span class="text-[10px] font-bold text-gray-600 block">ĐHQG TP.HCM</span>
+<span class="text-[9px] text-gray-400">KTX Khu A &amp; B</span>
+</div>
+</div>
+<!-- Route summary notice -->
+<div class="mt-4 p-3 bg-brand/5 rounded-xl border border-brand/10 flex items-start gap-2.5">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="navigation" aria-hidden="true" class="lucide lucide-navigation w-4 h-4 text-brand mt-0.5 flex-shrink-0"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+<p class="text-[11px] text-gray-600 leading-snug">
+                  Xe buýt số <strong>33, 53, 19</strong> kết nối trực tiếp KTX Khu A sang KTX Khu B, Chợ đêm Làng ĐH và các trường thành viên.
+                </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= VIEW 4: CỘNG ĐỒNG ================= -->
+<section class="page-view" id="view-community">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Header & Action -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+<div>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand/10 text-brand text-xs font-semibold mb-2">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="message-square" aria-hidden="true" class="lucide lucide-message-square w-3.5 h-3.5"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"></path></svg> Cộng đồng sinh viên VNU-HCM
+            </div>
+<h2 class="font-serif text-2xl sm:text-3xl font-bold text-brand">Cộng đồng Ẩm thực Làng Đại học</h2>
+<p class="text-xs text-gray-500 mt-1">Khám phá trải nghiệm ăn uống chân thật, cùng chia sẻ quán ruột và săn món ngon giá rẻ!</p>
+</div>
+<button class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white font-bold text-xs hover:bg-brand-light transition shadow-md shadow-brand/20" onclick="openReviewModal()">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="plus-circle" aria-hidden="true" class="lucide lucide-plus-circle w-4 h-4"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg> Viết đánh giá mới
+          </button>
+</div>
+<!-- Filter tabs -->
+<div class="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-[#e8e2d5]">
+<button class="px-4 py-2 text-xs font-bold border-b-2 border-brand text-brand">Mới nhất</button>
+<button class="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-brand">Hữu ích nhất</button>
+<button class="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-brand">Đánh giá 5 sao</button>
+<button class="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-brand">Kèm hình ảnh</button>
+<button class="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-brand">Đã xác thực SV</button>
+</div>
+<!-- Feed List -->
+<div class="space-y-6">
+<!-- Post 1 -->
+<article class="bg-white rounded-3xl border border-[#e8e2d5] p-6 shadow-sm">
+<div class="flex items-start justify-between gap-4 mb-4">
+<div class="flex items-center gap-3">
+<img alt="Avatar" class="w-11 h-11 rounded-full object-cover" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg">
+<div>
+<div class="flex items-center gap-2">
+<h4 class="text-sm font-bold text-gray-900">Ngọc Anh</h4>
+<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">SV KHTN</span>
+</div>
+<p class="text-xs text-gray-400">Đã đánh giá cho <strong class="text-brand cursor-pointer hover:underline" onclick="selectShopById('com-tam')">Cơm tấm Đêm Khu B</strong> • 2 giờ trước</p>
+</div>
+</div>
+<div class="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-lg text-amber-500 text-xs font-bold">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3.5 h-3.5 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 5.0
+              </div>
+</div>
+<h3 class="font-serif text-base font-bold text-gray-900 mb-2">Đĩa sườn chả cứu rỗi cơn đói cày đồ án lúc 11h đêm!</h3>
+<p class="text-xs text-gray-700 leading-relaxed mb-4">
+              Quán bán từ 17h tới tận 1h sáng. Sườn nướng tại chỗ than hoa thơm nức mũi, thịt mềm đậm đà không bị khô. Cơm tấm dẻo, mỡ hành tép mỡ giòn rụm xịn xò. Đĩa sườn bì chả 35k mà cơm thêm canh thêm thoải mái cho sinh viên!
+            </p>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4 rounded-2xl overflow-hidden">
+<img alt="Cơm tấm sườn" class="w-full h-36 object-cover rounded-xl hover:opacity-95 transition" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg">
+<img alt="Thịt nướng" class="w-full h-36 object-cover rounded-xl hover:opacity-95 transition" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg">
+<img alt="Bữa ăn" class="w-full h-36 object-cover rounded-xl hover:opacity-95 transition hidden sm:block" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg">
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-gray-100 text-xs text-gray-500">
+<div class="flex items-center gap-4">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand/20 bg-emerald-50/50 hover:bg-emerald-100/60 text-gray-700 hover:text-brand text-xs font-medium transition-all active:scale-95 shadow-sm" onclick="toggleHelpful(this)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="thumbs-up" aria-hidden="true" class="lucide lucide-thumbs-up w-3.5 h-3.5 transition-transform"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path><path d="M7 10v12"></path></svg> <span>Hữu ích (34)</span></button>
+<button class="flex items-center gap-1.5 hover:text-brand transition font-medium">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="message-circle" aria-hidden="true" class="lucide lucide-message-circle w-4 h-4"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path></svg> <span>Bình luận (8)</span>
+</button>
+</div>
+<button class="hover:text-red-500 transition flex items-center gap-1" onclick="reportItem('post-1')">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="flag" aria-hidden="true" class="lucide lucide-flag w-3.5 h-3.5"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg> Báo cáo
+              </button>
+</div>
+</article>
+<!-- Post 2 -->
+<article class="bg-white rounded-3xl border border-[#e8e2d5] p-6 shadow-sm">
+<div class="flex items-start justify-between gap-4 mb-4">
+<div class="flex items-center gap-3">
+<img alt="Avatar" class="w-11 h-11 rounded-full object-cover" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg">
+<div>
+<div class="flex items-center gap-2">
+<h4 class="text-sm font-bold text-gray-900">Minh Quân</h4>
+<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">SV Bách Khoa</span>
+</div>
+<p class="text-xs text-gray-400">Đã đánh giá cho <strong class="text-brand cursor-pointer hover:underline" onclick="selectShopById('lau-ca')">Lẩu cá 44 Làng ĐH</strong> • 1 ngày trước</p>
+</div>
+</div>
+<div class="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-lg text-amber-500 text-xs font-bold">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-3.5 h-3.5 fill-amber-500"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> 4.0
+              </div>
+</div>
+<h3 class="font-serif text-base font-bold text-gray-900 mb-2">Lẩu chua ngọt đi nhóm 4-5 người no nê, sinh viên nên đi trước 18h!</h3>
+<p class="text-xs text-gray-700 leading-relaxed mb-4">
+              Tụi mình 4 đứa gọi nồi lẩu cá điêu hồng 150k + dĩa cá thêm 50k mà ăn no căng rốn. Nước lẩu nấu măng chua cay ngọt rất thanh, rau muống và bắp chuối nhúng thả ga. Điểm trừ duy nhất là quán quá đông vào tối cuối tuần, ngồi hơi ồn và đợi nước sôi khoảng 15 phút.
+            </p>
+<div class="flex items-center justify-between pt-4 border-t border-gray-100 text-xs text-gray-500">
+<div class="flex items-center gap-4">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand/20 bg-emerald-50/50 hover:bg-emerald-100/60 text-gray-700 hover:text-brand text-xs font-medium transition-all active:scale-95 shadow-sm" onclick="toggleHelpful(this)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="thumbs-up" aria-hidden="true" class="lucide lucide-thumbs-up w-3.5 h-3.5 transition-transform"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path><path d="M7 10v12"></path></svg> <span>Hữu ích (19)</span></button>
+<button class="flex items-center gap-1.5 hover:text-brand transition font-medium">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="message-circle" aria-hidden="true" class="lucide lucide-message-circle w-4 h-4"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path></svg> <span>Bình luận (3)</span>
+</button>
+</div>
+<button class="hover:text-red-500 transition flex items-center gap-1" onclick="reportItem('post-2')">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="flag" aria-hidden="true" class="lucide lucide-flag w-3.5 h-3.5"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg> Báo cáo
+              </button>
+</div>
+</article>
+</div>
+</div>
+</section>
+<!-- ================= VIEW 5: LIÊN HỆ ================= -->
+<section class="page-view" id="view-contact">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="mb-8">
+<span class="text-xs font-bold uppercase tracking-wider text-brand">Kênh hỗ trợ &amp; Góp ý</span>
+<h2 class="font-serif text-2xl sm:text-3xl font-bold text-brand mt-1">Liên hệ Ban Quản Trị</h2>
+<p class="text-xs text-gray-500 mt-1">Bạn muốn đề xuất quán ngon mới quanh Làng Đại học hoặc báo sai thông tin giá cả? Hãy gửi lời nhắn cho chúng tôi.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Form -->
+<div class="lg:col-span-7 bg-white rounded-3xl border border-[#e8e2d5] p-6 sm:p-8 shadow-sm">
+<h3 class="font-serif text-lg font-bold text-brand mb-4">Gửi thông tin tiếp nhận</h3>
+<form class="space-y-4" onsubmit="handleContactSubmit(event)">
+<div>
+<label class="block text-xs font-bold text-gray-700 mb-1">Mục đích liên hệ *</label>
+<div class="grid grid-cols-2 gap-2 text-xs">
+<label class="flex items-center gap-2 p-2.5 rounded-xl border border-brand bg-brand/5 text-brand font-semibold cursor-pointer">
+<input checked="" class="text-brand" name="purpose" type="radio" value="propose"> Đề xuất quán mới
+                  </label>
+<label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold cursor-pointer hover:bg-gray-50">
+<input class="text-brand" name="purpose" type="radio" value="report"> Báo sai thông tin
+                  </label>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<label class="block text-xs font-semibold text-gray-700 mb-1">Họ tên người gửi *</label>
+<input class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-brand" placeholder="Nguyễn Văn A" required="" type="text">
+</div>
+<div>
+<label class="block text-xs font-semibold text-gray-700 mb-1">Email sinh viên / SĐT *</label>
+<input class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-brand" placeholder="sv@vnuhcm.edu.vn" required="" type="text">
+</div>
+</div>
+<div>
+<label class="block text-xs font-semibold text-gray-700 mb-1">Tên quán / Địa điểm liên quan *</label>
+<input class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-brand" placeholder="VD: Quán chè Cung Đình, Bánh mì KTX..." required="" type="text">
+</div>
+<div>
+<label class="block text-xs font-semibold text-gray-700 mb-1">Nội dung chi tiết *</label>
+<textarea class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-brand" placeholder="Mô tả món ăn, giá tiền, địa chỉ cụ thể..." required="" rows="4"></textarea>
+</div>
+<button class="w-full py-3 rounded-xl bg-brand text-white font-bold text-xs hover:bg-brand-light transition shadow-md shadow-brand/20" type="submit">
+                Gửi thông tin cho Ban Quản Trị
+              </button>
+</form>
+</div>
+<!-- Info sidebar -->
+<div class="lg:col-span-5 space-y-6">
+<div class="bg-white rounded-3xl border border-[#e8e2d5] p-6 shadow-sm">
+<h4 class="font-serif text-base font-bold text-brand mb-3">Đầu mối hỗ trợ sinh viên</h4>
+<div class="space-y-3 text-xs text-gray-600">
+<p><strong>Văn phòng:</strong> Nhà Văn Hóa Sinh Viên ĐHQG-HCM, Khu Đô thị ĐHQG TP.HCM.</p>
+<p><strong>Email:</strong> hotro@amthuclangdaihoc.vn</p>
+<p><strong>Thời gian phản hồi:</strong> Trong vòng 24 giờ làm việc.</p>
+</div>
+</div>
+<div class="bg-[#f7f4ed] rounded-3xl border border-[#e8e2d5] p-6">
+<h4 class="font-serif text-base font-bold text-brand mb-2">Quy chuẩn thông tin</h4>
+<p class="text-xs text-gray-600 leading-relaxed">
+                Tất cả đánh giá và thông tin đóng góp đều được kiểm duyệt nhằm loại bỏ tình trạng seeding, quảng cáo trá hình hoặc nâng giá bất hợp lý.
+              </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- ================= GLOBAL MODALS ================= -->
+<!-- 1. Filter Popover / Modal -->
+<div class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-4" id="filter-modal">
+<div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#e8e2d5] animate-in fade-in zoom-in-95 duration-150">
+<div class="flex items-center justify-between pb-4 border-b border-gray-100">
+<div class="flex items-center gap-2">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="sliders" aria-hidden="true" class="lucide lucide-sliders w-5 h-5 text-brand"><path d="M10 8h4"></path><path d="M12 21v-9"></path><path d="M12 8V3"></path><path d="M17 16h4"></path><path d="M19 12V3"></path><path d="M19 21v-5"></path><path d="M3 14h4"></path><path d="M5 10V3"></path><path d="M5 21v-7"></path></svg>
+<h3 class="font-serif text-lg font-bold text-brand">Bộ lọc ẩm thực</h3>
+</div>
+<button class="text-gray-400 hover:text-gray-700" onclick="toggleFilterModal()">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x w-5 h-5"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+</button>
+</div>
+<div class="py-5 space-y-5">
+<!-- Danh mục -->
+<div>
+<label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Danh mục món</label>
+<div class="grid grid-cols-3 gap-2" id="filter-category-options">
+<button class="cat-opt active px-3 py-2 rounded-xl text-xs font-semibold bg-brand text-white text-center" onclick="setFilterOption('cat', 'all')">Tất cả</button>
+<button class="cat-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center" onclick="setFilterOption('cat', 'Cơm - Bún')">Cơm - Bún</button>
+<button class="cat-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center" onclick="setFilterOption('cat', 'Ăn vặt')">Ăn vặt</button>
+<button class="cat-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center" onclick="setFilterOption('cat', 'Trà sữa')">Trà sữa</button>
+<button class="cat-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center" onclick="setFilterOption('cat', 'Lẩu &amp; Nướng')">Lẩu &amp; Nướng</button>
+</div>
+</div>
+<!-- Khu vực -->
+<div>
+<label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Khu vực Làng ĐH</label>
+<div class="grid grid-cols-2 gap-2" id="filter-area-options">
+<button class="area-opt active px-3 py-2 rounded-xl text-xs font-semibold bg-brand text-white text-center" onclick="setFilterOption('area', 'all')">Toàn khu vực</button>
+<button class="area-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center" onclick="setFilterOption('area', 'KTX Khu A')">KTX Khu A</button>
+<button class="area-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center" onclick="setFilterOption('area', 'KTX Khu B')">KTX Khu B</button>
+<button class="area-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center" onclick="setFilterOption('area', 'Chợ đêm')">Chợ đêm Làng ĐH</button>
+</div>
+</div>
+<!-- Mức giá -->
+<div>
+<label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Mức giá sinh viên</label>
+<div class="grid grid-cols-3 gap-2" id="filter-price-options">
+<button class="price-opt active px-3 py-2 rounded-xl text-xs font-semibold bg-brand text-white text-center" onclick="setFilterOption('price', 'all')">Mọi mức giá</button>
+<button class="price-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center" onclick="setFilterOption('price', '&lt;30k')">&lt; 30.000đ</button>
+<button class="price-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center" onclick="setFilterOption('price', '30k-50k')">30k - 50k</button>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+<button class="px-4 py-2.5 rounded-xl text-xs font-semibold text-gray-500 hover:text-gray-800" onclick="resetFilterModal()">Đặt lại</button>
+<button class="px-6 py-2.5 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-light transition shadow-md shadow-brand/20" onclick="applyFilterModal()">Áp dụng bộ lọc</button>
+</div>
+</div>
+</div>
+<!-- 2. User Modal (Hồ sơ, Quán đã lưu, Đánh giá, Báo cáo) -->
+<div class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-4" id="user-modal">
+<div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#e8e2d5] animate-in fade-in zoom-in-95 duration-150">
+<div class="flex items-center justify-between pb-4 border-b border-gray-100">
+<h3 class="font-serif text-lg font-bold text-brand" id="user-modal-title">Hồ sơ cá nhân</h3>
+<button class="text-gray-400 hover:text-gray-700" onclick="closeUserModal()">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x w-5 h-5"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+</button>
+</div>
+<div class="py-5 text-xs text-gray-600" id="user-modal-content">
+<!-- Dynamically injected based on tab -->
+</div>
+<div class="pt-4 border-t border-gray-100 flex justify-end">
+<button class="px-5 py-2 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-light transition" onclick="closeUserModal()">Đóng</button>
+</div>
+</div>
+</div>
+<!-- 3. Review Modal -->
+<div class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 hidden" id="review-modal">
+<div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#e8e2d5]">
+<div class="flex items-center justify-between pb-4 border-b border-gray-100">
+<h3 class="font-serif text-base font-bold text-brand">Viết đánh giá quán ăn</h3>
+<button class="text-gray-400 hover:text-gray-700" onclick="closeReviewModal()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="x" aria-hidden="true" class="lucide lucide-x w-5 h-5"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+<form class="py-4 space-y-4" onsubmit="handleReviewSubmit(event)">
+<div>
+<label class="block text-xs font-bold text-gray-700 mb-1">Chấm điểm sao *</label>
+<div class="flex items-center gap-1 text-amber-400 text-lg cursor-pointer">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-6 h-6 fill-amber-400"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-6 h-6 fill-amber-400"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-6 h-6 fill-amber-400"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-6 h-6 fill-amber-400"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="star" aria-hidden="true" class="lucide lucide-star w-6 h-6 fill-amber-400"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg>
+</div>
+</div>
+<div>
+<label class="block text-xs font-bold text-gray-700 mb-1">Cảm nhận của bạn *</label>
+<textarea class="w-full p-3 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-brand" placeholder="Hương vị, giá tiền, thái độ phục vụ..." required="" rows="3"></textarea>
+</div>
+<div>
+<label class="block text-xs font-bold text-gray-700 mb-1">Tải ảnh món (tối đa 5 ảnh)</label>
+<div class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:border-brand">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="image-plus" aria-hidden="true" class="lucide lucide-image-plus w-6 h-6 text-gray-400 mx-auto mb-1"><path d="M16 5h6"></path><path d="M19 2v6"></path><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"></path><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path><circle cx="9" cy="9" r="2"></circle></svg>
+<span class="text-[11px] text-gray-500">Bấm để chọn ảnh từ máy</span>
+</div>
+</div>
+<button class="w-full py-2.5 rounded-xl bg-brand text-white font-bold text-xs hover:bg-brand-light transition shadow-md shadow-brand/20" type="submit">
+          Đăng đánh giá ngay
+        </button>
+</form>
+</div>
+</div>
+<!-- Toast Notification -->
+<div class="fixed bottom-6 right-6 z-50 bg-brand text-white px-4 py-3 rounded-2xl shadow-xl border border-white/20 transform transition duration-300 pointer-events-none flex items-center gap-2.5 text-xs font-semibold translate-y-20 opacity-0" id="toast">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="check-circle-2" aria-hidden="true" class="lucide lucide-check-circle-2 w-4 h-4 text-emerald-400"><circle cx="12" cy="12" r="10"></circle><path d="m16 9-5.5 5.5L8 12"></path></svg>
+<span id="toast-text">Cảm ơn bạn đã phản hồi!</span>
+</div>
+<!-- ================= FOOTER ================= -->
+<footer class="bg-white border-t border-[#e8e2d5] mt-16">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="utensils" aria-hidden="true" class="lucide lucide-utensils w-4 h-4"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>
+</div>
+<span class="font-serif text-lg font-bold text-brand">FOODIE REVIEW</span>
+</div>
+<div class="flex items-center gap-6 text-xs text-gray-500">
+<a class="hover:text-brand" href="javascript:void(0)" onclick="navigateTo('home')">Về chúng tôi</a>
+<a class="hover:text-brand" href="javascript:void(0)" onclick="navigateTo('contact')">Chính sách bảo mật</a>
+<a class="hover:text-brand" href="javascript:void(0)" onclick="navigateTo('contact')">Điều khoản</a>
+<a class="hover:text-brand" href="javascript:void(0)" onclick="navigateTo('contact')">Liên hệ</a>
+</div>
+</div>
+<div class="bg-[#fcfaf6] py-4 text-center border-t border-[#e8e2d5]/60 text-[11px] text-gray-400">
+      © 2026 Ẩm thực Làng Đại học. All rights reserved. Cẩm nang ẩm thực sinh viên Đại học Quốc gia TP.HCM.
+    </div>
+</footer>
+<!-- ================= JAVASCRIPT PROTOTYPE CORE ENGINE ================= -->
+<script>
+    // --- 1. DATA REPOSITORY ---
+    const allShops = [
+      // Page 1
+      {
+        id: 'banh-trang',
+        name: 'Quán Bánh Tráng Nướng',
+        image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80',
+        rating: 4.6,
+        reviewsCount: 24,
+        price: '15.000–25.000đ',
+        area: 'KTX Khu A',
+        category: 'Ăn vặt',
+        specialties: ['Bánh tráng nướng phô mai', 'Bánh tráng lụi bò', 'Cút nướng bơ'],
+        saved: true
+      },
+      {
+        id: 'tra-sua',
+        name: 'Tiệm Trà Sữa Trân Châu',
+        image: 'https://images.unsplash.com/photo-1558857563-b37fe4355328?auto=format&fit=crop&w=600&q=80',
+        rating: 4.5,
+        reviewsCount: 18,
+        price: '25.000–40.000đ',
+        area: 'UIT',
+        category: 'Trà sữa',
+        specialties: ['Trà sữa nướng', 'Trà lài kem cheese', 'Trân châu đường đen'],
+        saved: false
+      },
+      {
+        id: 'lau-ca',
+        name: 'Lẩu cá 44 Làng ĐH',
+        image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=80',
+        rating: 4.8,
+        reviewsCount: 32,
+        price: '45.000–70.000đ',
+        area: 'KTX Khu B',
+        category: 'Lẩu & Nướng',
+        specialties: ['Lẩu cá điêu hồng măng chua', 'Cá hú kho tộ', 'Cơm chiên tỏi'],
+        saved: true
+      },
+      {
+        id: 'com-tam',
+        name: 'Cơm tấm Đêm Khu B',
+        image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80',
+        rating: 4.7,
+        reviewsCount: 28,
+        price: '25.000–40.000đ',
+        area: 'KTX Khu B',
+        category: 'Cơm - Bún',
+        specialties: ['Cơm sườn nướng mỡ hành', 'Chả trứng hấp', 'Canh khổ qua dồn thịt'],
+        saved: false
+      },
+      {
+        id: 'bun-bo',
+        name: 'Quán Bún Bò Huế O Mai',
+        image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=600&q=80',
+        rating: 4.6,
+        reviewsCount: 21,
+        price: '30.000–45.000đ',
+        area: 'Chợ đêm',
+        category: 'Cơm - Bún',
+        specialties: ['Bún bắp bò gân', 'Chả cua Huế', 'Bún giò heo'],
+        saved: false
+      },
+      {
+        id: 'xien-nuong',
+        name: 'Quán Xiên Nướng Phố Đêm',
+        image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80',
+        rating: 4.5,
+        reviewsCount: 16,
+        price: '15.000–35.000đ',
+        area: 'Chợ đêm',
+        category: 'Lẩu & Nướng',
+        specialties: ['Bò cuộn nấm kim châm', 'Chân gà quái thú', 'Bạch tuộc nướng sa tế'],
+        saved: false
+      },
+
+      // Page 2
+      {
+        id: 'banh-canh',
+        name: 'Bánh Canh Ghẹ Cổng Khu A',
+        image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80',
+        rating: 4.4,
+        reviewsCount: 19,
+        price: '30.000–40.000đ',
+        area: 'KTX Khu A',
+        category: 'Cơm - Bún',
+        specialties: ['Bánh canh ghẹ nguyên con', 'Quẩy giòn nóng', 'Chả cá hấp'],
+        saved: false
+      },
+      {
+        id: 'che-cung-dinh',
+        name: 'Chè Cung Đình 20 Món',
+        image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=600&q=80',
+        rating: 4.7,
+        reviewsCount: 41,
+        price: '12.000–20.000đ',
+        area: 'UIT',
+        category: 'Ăn vặt',
+        specialties: ['Chè khúc bạch phô mai', 'Chè thái sầu riêng', 'Sữa chua dẻo dâu'],
+        saved: false
+      },
+      {
+        id: 'sup-cua',
+        name: 'Súp Cua Bách Khoa',
+        image: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=600&q=80',
+        rating: 4.8,
+        reviewsCount: 35,
+        price: '20.000–30.000đ',
+        area: 'UIT',
+        category: 'Ăn vặt',
+        specialties: ['Súp cua óc heo', 'Trứng bắc thảo', 'Bong bóng cá'],
+        saved: false
+      },
+      {
+        id: 'com-ga',
+        name: 'Cơm Gà Xối Mỡ Da Giòn',
+        image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=600&q=80',
+        rating: 4.5,
+        reviewsCount: 22,
+        price: '28.000–38.000đ',
+        area: 'KTX Khu B',
+        category: 'Cơm - Bún',
+        specialties: ['Cơm gà góc tư xối mỡ', 'Canh rong biển', 'Kim chi chua ngọt'],
+        saved: false
+      },
+      {
+        id: 'tra-dao',
+        name: 'Trà Đào Dầm Hồ Đá',
+        image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=600&q=80',
+        rating: 4.6,
+        reviewsCount: 29,
+        price: '15.000–25.000đ',
+        area: 'Chợ đêm',
+        category: 'Trà sữa',
+        specialties: ['Trà đào cam sả', 'Trà dâu tây tươi', 'Bánh tráng trộn'],
+        saved: false
+      },
+      {
+        id: 'mi-cay',
+        name: 'Mì Cay Seoul 7 Cấp Độ',
+        image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80',
+        rating: 4.3,
+        reviewsCount: 15,
+        price: '35.000–55.000đ',
+        area: 'KTX Khu A',
+        category: 'Cơm - Bún',
+        specialties: ['Mì cay hải sản', 'Kimbap chiên xù', 'Takoyaki mực'],
+        saved: false
+      },
+
+      // Page 3
+      {
+        id: 'pho-ha-noi',
+        name: 'Phở Bắc Gia Truyền',
+        image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=600&q=80',
+        rating: 4.7,
+        reviewsCount: 17,
+        price: '30.000–45.000đ',
+        area: 'KTX Khu A',
+        category: 'Cơm - Bún',
+        specialties: ['Phở tái nạm', 'Quẩy giòn Hà Nội', 'Trứng chần hành lá'],
+        saved: false
+      },
+      {
+        id: 'nem-nuong',
+        name: 'Nem Nướng Nha Trang Cô Ba',
+        image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80',
+        rating: 4.6,
+        reviewsCount: 26,
+        price: '30.000–40.000đ',
+        area: 'Chợ đêm',
+        category: 'Ăn vặt',
+        specialties: ['Phần nem nướng đầy đủ', 'Bánh tráng chiên giòn rụm', 'Nước chấm nếp vàng'],
+        saved: false
+      },
+      {
+        id: 'lau-bo',
+        name: 'Lẩu Bò Ba Toa',
+        image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=80',
+        rating: 4.9,
+        reviewsCount: 44,
+        price: '50.000–80.000đ',
+        area: 'KTX Khu B',
+        category: 'Lẩu & Nướng',
+        specialties: ['Lẩu đuôi bò hầm sả', 'Mì gói trứng', 'Chao chấm cay'],
+        saved: false
+      },
+      {
+        id: 'tra-trai-cay',
+        name: 'Tiệm Sinh Tố Trái Cây Tô',
+        image: 'https://images.unsplash.com/photo-1558857563-b37fe4355328?auto=format&fit=crop&w=600&q=80',
+        rating: 4.5,
+        reviewsCount: 20,
+        price: '20.000–30.000đ',
+        area: 'UIT',
+        category: 'Trà sữa',
+        specialties: ['Trái cây tô sữa chua', 'Sinh tố bơ sáp', 'Nước ép cam nha đam'],
+        saved: false
+      },
+      {
+        id: 'banh-mi-chao',
+        name: 'Bánh Mì Chảo 2 Trứng',
+        image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80',
+        rating: 4.4,
+        reviewsCount: 14,
+        price: '20.000–35.000đ',
+        area: 'KTX Khu A',
+        category: 'Cơm - Bún',
+        specialties: ['Bánh mì chảo pate xúc xích', 'Bò né sốt tiêu đen', 'Bánh mì nóng hổi'],
+        saved: false
+      },
+      {
+        id: 'kem-bo',
+        name: 'Kem Bơ Sáp Đà Lạt',
+        image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=600&q=80',
+        rating: 4.8,
+        reviewsCount: 38,
+        price: '20.000–25.000đ',
+        area: 'Chợ đêm',
+        category: 'Ăn vặt',
+        specialties: ['Kem bơ dừa sấy', 'Kem sầu riêng tươi', 'Chè bơ bánh lọt'],
+        saved: false
+      }
+    ];
+
+    // Prototype State Variables
+    let currentPage = 1;
+    const pageSize = 6;
+    let currentFilter = {
+      keyword: '',
+      category: 'all',
+      area: 'all',
+      price: 'all'
+    };
+    let currentShopDetailId = 'com-tam';
+    let userSavedShops = ['banh-trang', 'lau-ca'];
+
+    // --- 2. HEADER SCROLL EFFECT (150ms) ---
+    window.addEventListener('scroll', () => {
+      const header = document.getElementById('main-header');
+      if (window.scrollY > 20) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    }, { passive: true });
+
+    // --- 3. PAGE NAVIGATION ENGINE ---
+    function navigateTo(viewId) {
+      // Close dropdowns
+      closeUserDropdown();
+      
+      // Update Nav Button Styles
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.remove('text-brand', 'bg-brand/10', 'border-b-2', 'border-brand');
+        btn.classList.add('text-gray-600');
+      });
+      const activeBtn = document.getElementById(`nav-btn-${viewId}`);
+      if (activeBtn) {
+        activeBtn.classList.add('text-brand', 'bg-brand/10', 'border-b-2', 'border-brand');
+        activeBtn.classList.remove('text-gray-600');
+      }
+
+      // Hide all pages with fade
+      document.querySelectorAll('.page-view').forEach(view => {
+        view.classList.remove('active');
+      });
+
+      // Show requested page
+      const targetView = document.getElementById(`view-${viewId}`);
+      if (targetView) {
+        setTimeout(() => {
+          targetView.classList.add('active');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 50);
+      }
+
+      // Render view-specific components if needed
+      if (viewId === 'places') {
+        renderPlacesList();
+      }
+    }
+
+    function toggleMobileNav() {
+      const mobileNav = document.getElementById('mobile-nav');
+      mobileNav.classList.toggle('hidden');
+    }
+
+    // --- 4. USER DROPDOWN & MODALS ---
+    function toggleUserDropdown(event) {
+      event.stopPropagation();
+      const dropdown = document.getElementById('user-dropdown');
+      const arrow = document.getElementById('menu-arrow');
+      const isHidden = dropdown.classList.contains('hidden-custom');
+      
+      if (isHidden) {
+        dropdown.classList.remove('hidden-custom');
+        dropdown.classList.add('visible-custom');
+        arrow.classList.add('rotate-180');
+      } else {
+        closeUserDropdown();
+      }
+    }
+
+    function closeUserDropdown() {
+      const dropdown = document.getElementById('user-dropdown');
+      const arrow = document.getElementById('menu-arrow');
+      if (dropdown) {
+        dropdown.classList.add('hidden-custom');
+        dropdown.classList.remove('visible-custom');
+      }
+      if (arrow) {
+        arrow.classList.remove('rotate-180');
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('user-dropdown');
+      const btn = document.getElementById('user-menu-btn');
+      if (dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+        closeUserDropdown();
+      }
+    });
+
+    function openUserModal(tab) {
+      closeUserDropdown();
+      const modal = document.getElementById('user-modal');
+      const title = document.getElementById('user-modal-title');
+      const content = document.getElementById('user-modal-content');
+
+      if (tab === 'profile') {
+        title.innerText = 'Hồ sơ sinh viên';
+        content.innerHTML = `
+          <div class="space-y-4">
+            <div class="flex items-center gap-4 p-4 rounded-2xl bg-[#fcfaf6] border border-[#e8e2d5]">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-14 h-14 rounded-full object-cover">
+              <div>
+                <h4 class="text-sm font-bold text-gray-900">Đặng Thị Lan Anh</h4>
+                <p class="text-xs text-gray-500">MSSV: 22120158 • Trường ĐH KH Tự Nhiên</p>
+                <p class="text-[11px] text-brand font-semibold mt-1">Đã đóng góp 6 đánh giá chất lượng</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-center">
+              <div class="p-3 bg-brand/5 rounded-xl border border-brand/10">
+                <span class="text-xl font-bold text-brand block">6</span>
+                <span class="text-[11px] text-gray-500">Đánh giá đã viết</span>
+              </div>
+              <div class="p-3 bg-brand/5 rounded-xl border border-brand/10">
+                <span class="text-xl font-bold text-brand block">2</span>
+                <span class="text-[11px] text-gray-500">Quán yêu thích</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (tab === 'saved') {
+        title.innerText = 'Quán ăn đã lưu (' + userSavedShops.length + ')';
+        const savedList = allShops.filter(s => userSavedShops.includes(s.id));
+        let html = '<div class="space-y-3">';
+        savedList.forEach(s => {
+          html += `
+            <div class="flex items-center justify-between p-3 rounded-2xl bg-[#fcfaf6] border border-[#e8e2d5]">
+              <div class="flex items-center gap-3 cursor-pointer" onclick="closeUserModal(); selectShopById('${s.id}');">
+                <img src="${s.image}" class="w-12 h-12 rounded-xl object-cover">
+                <div>
+                  <h5 class="text-xs font-bold text-gray-900 hover:text-brand transition">${s.name}</h5>
+                  <p class="text-[11px] text-gray-500">${s.price} • ${s.area}</p>
+                </div>
+              </div>
+              <button onclick="toggleCardSave(event, '${s.id}')" class="p-2 text-brand hover:text-red-500 transition" title="Bỏ lưu">
+                <i data-lucide="bookmark-check" class="w-4 h-4 fill-brand"></i>
+              </button>
+            </div>
+          `;
+        });
+        html += '</div>';
+        content.innerHTML = html;
+      } else if (tab === 'my-reviews') {
+        title.innerText = 'Đánh giá của tôi';
+        content.innerHTML = `
+          <div class="space-y-3">
+            <div class="p-3.5 rounded-2xl bg-[#fcfaf6] border border-[#e8e2d5]">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-gray-900">Cơm tấm Đêm Khu B</span>
+                <span class="text-xs font-bold text-amber-500">5.0 ★</span>
+              </div>
+              <p class="text-[11px] text-gray-600 mb-2">"Sườn mềm, cơm dẻo, 35k sườn bì chả quá đỉnh!"</p>
+              <span class="text-[10px] text-gray-400">12 người thấy hữu ích</span>
+            </div>
+          </div>
+        `;
+      } else if (tab === 'my-reports') {
+        title.innerText = 'Báo cáo của tôi';
+        content.innerHTML = `
+          <div class="p-4 rounded-2xl bg-[#fcfaf6] border border-[#e8e2d5] text-center">
+            <i data-lucide="shield-check" class="w-8 h-8 text-brand mx-auto mb-2"></i>
+            <p class="text-xs font-semibold text-gray-800">Không có báo cáo vi phạm nào đang xử lý.</p>
+            <p class="text-[11px] text-gray-500 mt-1">Cảm ơn bạn đã luôn giữ cộng đồng ẩm thực trong sạch và văn minh!</p>
+          </div>
+        `;
+      }
+
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeUserModal() {
+      document.getElementById('user-modal').classList.add('hidden');
+    }
+
+    function triggerLogout() {
+      closeUserDropdown();
+      showToast('Đã mô phỏng đăng xuất. Chuyển sang trạng thái khách.');
+    }
+
+    // --- 5. RENDER FOOD CARDS WITH 3D TILT ---
+    function renderFoodGrid() {
+      const grid = document.getElementById('food-grid');
+      grid.innerHTML = '';
+
+      // Filter logic
+      let filtered = allShops.filter(shop => {
+        const matchKeyword = currentFilter.keyword === '' || 
+          shop.name.toLowerCase().includes(currentFilter.keyword.toLowerCase()) ||
+          shop.specialties.some(sp => sp.toLowerCase().includes(currentFilter.keyword.toLowerCase()));
+        
+        const matchCategory = currentFilter.category === 'all' || shop.category === currentFilter.category;
+        const matchArea = currentFilter.area === 'all' || shop.area.includes(currentFilter.area);
+        
+        let matchPrice = true;
+        if (currentFilter.price === '<30k') {
+          matchPrice = shop.price.includes('15.000') || shop.price.includes('20.000') || shop.price.includes('25.000');
+        } else if (currentFilter.price === '30k-50k') {
+          matchPrice = shop.price.includes('30.000') || shop.price.includes('40.000') || shop.price.includes('45.000');
+        }
+
+        return matchKeyword && matchCategory && matchArea && matchPrice;
+      });
+
+      // Pagination slice
+      const startIndex = (currentPage - 1) * pageSize;
+      const pagedShops = filtered.slice(startIndex, startIndex + pageSize);
+
+      if (pagedShops.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-16 text-center bg-white rounded-3xl border border-[#e8e2d5] p-8">
+            <i data-lucide="utensils-crossed" class="w-12 h-12 text-gray-300 mx-auto mb-3"></i>
+            <h4 class="font-serif text-lg font-bold text-gray-800">Không tìm thấy quán phù hợp</h4>
+            <p class="text-xs text-gray-500 mt-1 max-w-sm mx-auto">Vui lòng thử từ khóa khác hoặc điều chỉnh lại các tiêu chí lọc.</p>
+            <button onclick="clearFilter()" class="mt-4 px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-light transition">Xóa bộ lọc</button>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      pagedShops.forEach(shop => {
+        const isSaved = userSavedShops.includes(shop.id);
+        const card = document.createElement('div');
+        card.className = 'food-card bg-white rounded-3xl border border-[#e8e2d5] overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer group relative';
+        
+        card.innerHTML = `
+          <div onclick="selectShopById('${shop.id}')">
+            <!-- Image Frame -->
+            <div class="relative h-48 sm:h-52 w-full overflow-hidden bg-gray-100">
+              <img src="${shop.image}" alt="${shop.name}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+              
+              <!-- Category Badge -->
+              <span class="absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full bg-brand/90 backdrop-blur-md text-white text-[11px] font-semibold tracking-wide">
+                ${shop.category}
+              </span>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-5">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-serif text-base sm:text-lg font-bold text-gray-900 group-hover:text-brand transition truncate pr-2">
+                  ${shop.name}
+                </h3>
+              </div>
+
+              <!-- Rating & Reviews -->
+              <div class="flex items-center gap-1.5 text-xs text-gray-600 mb-3">
+                <span class="flex items-center gap-1 font-bold text-amber-500">
+                  <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-500"></i> ${shop.rating}
+                </span>
+                <span class="text-gray-400">(${shop.reviewsCount} đánh giá)</span>
+              </div>
+
+              <!-- Meta Info -->
+              <div class="space-y-1.5 text-xs text-gray-600">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="tag" class="w-3.5 h-3.5 text-brand flex-shrink-0"></i>
+                  <span class="font-semibold text-gray-800">${shop.price}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i data-lucide="map-pin" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0"></i>
+                  <span class="text-gray-500 truncate">${shop.area}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="px-5 pb-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-1">
+            <button onclick="selectShopById('${shop.id}')" class="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+              Xem chi tiết <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+
+            <!-- Save Bookmark Button -->
+            <button onclick="toggleCardSave(event, '${shop.id}')" class="p-2 rounded-xl border border-gray-200 hover:border-brand bg-white text-gray-500 hover:text-brand transition ${isSaved ? 'text-brand border-brand/60 bg-brand/5' : ''}" title="${isSaved ? 'Đã lưu' : 'Lưu quán'}">
+              <i data-lucide="bookmark" class="w-4 h-4 ${isSaved ? 'fill-brand text-brand' : ''}"></i>
+            </button>
+          </div>
+        `;
+
+        // Attach Mouse Tilt Interactions for Desktop
+        attachCardTilt(card);
+
+        grid.appendChild(card);
+      });
+
+      // Update Pagination UI
+      updatePaginationControls(filtered.length);
+      lucide.createIcons();
+    }
+
+    // 3D Card Tilt Function (smooth 180ms)
+    function attachCardTilt(cardElement) {
+      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        cardElement.addEventListener('mousemove', (e) => {
+          const rect = cardElement.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          
+          const rotateX = ((y - centerY) / centerY) * -6; // max 6deg
+          const rotateY = ((x - centerX) / centerX) * 6;
+
+          cardElement.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+        });
+
+        cardElement.addEventListener('mouseleave', () => {
+          cardElement.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        });
+      }
+    }
+
+    // --- 6. PAGINATION CONTROLS & HEADER CLEARANCE SCROLL ---
+    function updatePaginationControls(totalItems) {
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+      document.getElementById('page-display-label').innerText = `Trang ${currentPage} / ${totalPages}`;
+
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById(`page-num-${i}`);
+        if (btn) {
+          if (i === currentPage) {
+            btn.className = 'w-9 h-9 rounded-xl font-bold text-sm transition bg-brand text-white shadow-sm';
+          } else {
+            btn.className = 'w-9 h-9 rounded-xl font-semibold text-sm transition text-gray-700 hover:bg-[#f7f4ed] hover:text-brand';
+          }
+          btn.style.display = i <= totalPages ? 'inline-flex' : 'none';
+        }
+      }
+
+      document.getElementById('btn-prev-page').disabled = (currentPage === 1);
+      document.getElementById('btn-next-page').disabled = (currentPage >= totalPages);
+    }
+
+    function goToPage(page) {
+      if (page === currentPage) return;
+      currentPage = page;
+      
+      // Animate transition on grid
+      const grid = document.getElementById('food-grid');
+      grid.style.opacity = '0';
+      grid.style.transform = 'translateY(8px)';
+      grid.style.transition = 'opacity 180ms ease, transform 180ms ease';
+
+      setTimeout(() => {
+        renderFoodGrid();
+        grid.style.opacity = '1';
+        grid.style.transform = 'translateY(0)';
+        
+        // Scroll so that title and filters are immediately below header
+        scrollToFoodSection();
+      }, 180);
+    }
+
+    function changePage(direction) {
+      if (direction === 'prev' && currentPage > 1) {
+        goToPage(currentPage - 1);
+      } else if (direction === 'next' && currentPage < 3) {
+        goToPage(currentPage + 1);
+      }
+    }
+
+    function scrollToFoodSection() {
+      const anchor = document.getElementById('food-list-anchor');
+      const headerOffset = 90; // header height 80px + 10px buffer
+      const elementPosition = anchor.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+
+    // --- 7. DETAIL SHOP VIEW ---
+    function selectShopById(shopId) {
+      const shop = allShops.find(s => s.id === shopId) || allShops[0];
+      currentShopDetailId = shop.id;
+
+      document.getElementById('detail-title').innerText = shop.name;
+      document.getElementById('detail-img').src = shop.image;
+      document.getElementById('detail-category').innerText = shop.category;
+      document.getElementById('detail-rating').innerText = shop.rating;
+      document.getElementById('detail-reviews-count').innerText = shop.reviewsCount;
+      document.getElementById('detail-location').innerText = shop.area;
+      document.getElementById('detail-price').innerText = shop.price;
+      document.getElementById('detail-full-address').innerText = `Đường số 8, Phường Linh Trung, Thủ Đức (${shop.area})`;
+
+      // Specialties
+      const specContainer = document.getElementById('detail-specialties');
+      specContainer.innerHTML = '';
+      shop.specialties.forEach(spec => {
+        specContainer.innerHTML += `
+          <div class="flex items-center gap-2 p-3 rounded-xl bg-[#fcfaf6] border border-[#e8e2d5]">
+            <i data-lucide="check" class="w-4 h-4 text-brand"></i>
+            <span class="text-xs font-semibold text-gray-800">${spec}</span>
+          </div>
+        `;
+      });
+
+      // Update save button in detail
+      updateDetailSaveButton(userSavedShops.includes(shop.id));
+
+      navigateTo('detail');
+      lucide.createIcons();
+    }
+
+    function goBackFromDetail() {
+      // Returns to home and preserves previous filters and pagination
+      navigateTo('home');
+      setTimeout(() => {
+        scrollToFoodSection();
+      }, 100);
+    }
+
+    function toggleDetailSave() {
+      const isSaved = userSavedShops.includes(currentShopDetailId);
+      if (isSaved) {
+        userSavedShops = userSavedShops.filter(id => id !== currentShopDetailId);
+        showToast('Đã bỏ lưu quán này');
+      } else {
+        userSavedShops.push(currentShopDetailId);
+        showToast('Đã lưu vào danh sách quán của bạn!');
+      }
+      updateDetailSaveButton(!isSaved);
+      updateSavedBadge();
+      renderFoodGrid();
+    }
+
+    function updateDetailSaveButton(saved) {
+      const icon = document.getElementById('detail-save-icon');
+      const text = document.getElementById('detail-save-text');
+      if (saved) {
+        icon.className = 'w-4 h-4 text-brand fill-brand';
+        text.innerText = 'Đã lưu quán';
+      } else {
+        icon.className = 'w-4 h-4 text-brand';
+        text.innerText = 'Lưu quán này';
+      }
+    }
+
+    function toggleCardSave(e, shopId) {
+      e.stopPropagation();
+      if (userSavedShops.includes(shopId)) {
+        userSavedShops = userSavedShops.filter(id => id !== shopId);
+        showToast('Đã bỏ lưu quán');
+      } else {
+        userSavedShops.push(shopId);
+        showToast('Đã lưu quán thành công!');
+      }
+      updateSavedBadge();
+      renderFoodGrid();
+    }
+
+    function updateSavedBadge() {
+      document.getElementById('saved-badge-count').innerText = userSavedShops.length;
+    }
+
+    // --- 8. FILTER ENGINE ---
+    function toggleFilterModal() {
+      const modal = document.getElementById('filter-modal');
+      modal.classList.toggle('hidden');
+    }
+
+    let tempCat = 'all';
+    let tempArea = 'all';
+    let tempPrice = 'all';
+
+    function setFilterOption(type, value) {
+      if (type === 'cat') {
+        tempCat = value;
+        document.querySelectorAll('.cat-opt').forEach(b => {
+          b.className = 'cat-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center';
+        });
+      } else if (type === 'area') {
+        tempArea = value;
+        document.querySelectorAll('.area-opt').forEach(b => {
+          b.className = 'area-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center';
+        });
+      } else if (type === 'price') {
+        tempPrice = value;
+        document.querySelectorAll('.price-opt').forEach(b => {
+          b.className = 'price-opt px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700 hover:border-brand text-center';
+        });
+      }
+      event.target.className = `${type}-opt active px-3 py-2 rounded-xl text-xs font-semibold bg-brand text-white text-center`;
+    }
+
+    function applyFilterModal() {
+      currentFilter.category = tempCat;
+      currentFilter.area = tempArea;
+      currentFilter.price = tempPrice;
+      currentPage = 1;
+      
+      toggleFilterModal();
+      renderFoodGrid();
+      
+      const indicator = document.getElementById('active-filter-indicator');
+      if (tempCat !== 'all' || tempArea !== 'all' || tempPrice !== 'all') {
+        indicator.classList.remove('hidden');
+        showActiveTag(`${tempCat !== 'all' ? tempCat : ''} ${tempArea !== 'all' ? tempArea : ''}`.trim() || 'Đang lọc');
+      } else {
+        indicator.classList.add('hidden');
+        document.getElementById('filter-tags-bar').classList.add('hidden');
+      }
+      
+      scrollToFoodSection();
+    }
+
+    function resetFilterModal() {
+      tempCat = 'all';
+      tempArea = 'all';
+      tempPrice = 'all';
+      document.querySelectorAll('.cat-opt, .area-opt, .price-opt').forEach(b => {
+        b.className = b.className.replace('bg-brand text-white', 'bg-gray-50 border border-gray-200 text-gray-700');
+      });
+      document.querySelectorAll('.cat-opt')[0].className = 'cat-opt active px-3 py-2 rounded-xl text-xs font-semibold bg-brand text-white text-center';
+      document.querySelectorAll('.area-opt')[0].className = 'area-opt active px-3 py-2 rounded-xl text-xs font-semibold bg-brand text-white text-center';
+      document.querySelectorAll('.price-opt')[0].className = 'price-opt active px-3 py-2 rounded-xl text-xs font-semibold bg-brand text-white text-center';
+    }
+
+    function quickFilter(keyword) {
+      currentFilter.keyword = keyword;
+      currentPage = 1;
+      document.getElementById('home-search-input').value = keyword;
+      showActiveTag(keyword);
+      renderFoodGrid();
+      scrollToFoodSection();
+    }
+
+    function executeSearch() {
+      const val = document.getElementById('home-search-input').value.trim();
+      currentFilter.keyword = val;
+      currentPage = 1;
+      if (val) {
+        showActiveTag(val);
+      } else {
+        document.getElementById('filter-tags-bar').classList.add('hidden');
+      }
+      renderFoodGrid();
+      scrollToFoodSection();
+    }
+
+    function showActiveTag(label) {
+      const bar = document.getElementById('filter-tags-bar');
+      const text = document.getElementById('active-tag-text');
+      text.innerText = label;
+      bar.classList.remove('hidden');
+    }
+
+    function clearFilter() {
+      currentFilter = { keyword: '', category: 'all', area: 'all', price: 'all' };
+      document.getElementById('home-search-input').value = '';
+      document.getElementById('filter-tags-bar').classList.add('hidden');
+      document.getElementById('active-filter-indicator').classList.add('hidden');
+      currentPage = 1;
+      renderFoodGrid();
+      resetFilterModal();
+    }
+
+    // --- 9. PLACES VIEW RENDERER ---
+    function renderPlacesList(filterArea = 'all') {
+      const container = document.getElementById('places-full-list');
+      if (!container) return;
+      
+      let list = allShops;
+      if (filterArea !== 'all') {
+        list = allShops.filter(s => s.area.includes(filterArea));
+      }
+
+      container.innerHTML = '';
+      list.forEach(shop => {
+        container.innerHTML += `
+          <div onclick="selectShopById('${shop.id}')" class="bg-white p-4 rounded-2xl border border-[#e8e2d5] hover:border-brand/40 shadow-sm hover:shadow transition flex gap-4 cursor-pointer group">
+            <img src="${shop.image}" class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0 group-hover:scale-102 transition">
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-brand uppercase tracking-wider">${shop.category}</span>
+                  <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5"><i data-lucide="star" class="w-3 h-3 fill-amber-500"></i> ${shop.rating}</span>
+                </div>
+                <h4 class="font-serif text-sm sm:text-base font-bold text-gray-900 group-hover:text-brand transition">${shop.name}</h4>
+                <p class="text-xs text-gray-500 mt-0.5">${shop.area}</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-800">${shop.price}</span>
+                <span class="text-xs font-bold text-brand group-hover:underline">Xem quán →</span>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function filterByArea(area) {
+      renderPlacesList(area);
+    }
+
+    // --- 10. REVIEWS & COMMUNITY ACTIONS ---
+    function openReviewModal() {
+      document.getElementById('review-modal').classList.remove('hidden');
+    }
+    function closeReviewModal() {
+      document.getElementById('review-modal').classList.add('hidden');
+    }
+    function handleReviewSubmit(e) {
+      e.preventDefault();
+      closeReviewModal();
+      showToast('Đánh giá của bạn đã được gửi và đang chờ kiểm duyệt!');
+    }
+
+    function toggleHelpful(btn) {
+      const span = btn.querySelector('span');
+      let count = parseInt(span.innerText.replace(/[^0-9]/g, '')) || 0;
+      if (!btn.dataset.voted) {
+        btn.dataset.voted = 'true';
+        btn.classList.add('text-brand', 'font-bold');
+        span.innerText = `Hữu ích (${count + 1})`;
+        showToast('Cảm ơn bạn đã phản hồi!');
+      } else {
+        btn.dataset.voted = '';
+        btn.classList.remove('text-brand', 'font-bold');
+        span.innerText = `Hữu ích (${count - 1})`;
+      }
+    }
+
+    function reportItem(id) {
+      showToast('Đã gửi báo cáo cho Ban Quản Trị xem xét.');
+    }
+
+    function handleContactSubmit(e) {
+      e.preventDefault();
+      showToast('Thông tin tiếp nhận đã được gửi thành công! BQT sẽ phản hồi sớm.');
+      e.target.reset();
+    }
+
+    // Toast Utility
+    let toastTimeout;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toast-text');
+      text.innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 2500);
+    }
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+      renderFoodGrid();
+      lucide.createIcons();
+    });
+  </script>
+
+
+
+<script id="pagination-react-enhancements">(function(){var originalUpdate=window.updatePaginationControls;window.updatePaginationControls=function(totalItems){var totalPages=Math.ceil(totalItems/pageSize)||1;var pageLabel=document.getElementById('page-display-label');if(pageLabel)pageLabel.innerText='Trang '+currentPage+' / '+totalPages;for(var i=1;i<=3;i++){var btn=document.getElementById('page-num-'+i);if(btn){if(i===currentPage){btn.className='w-10 h-10 rounded-xl inline-flex items-center justify-center text-center p-0 leading-none font-bold text-sm transition bg-brand text-white shadow-sm';}else{btn.className='w-10 h-10 rounded-xl inline-flex items-center justify-center text-center p-0 leading-none font-medium text-sm transition text-gray-700 hover:bg-[#f7f4ed] hover:text-brand';}btn.style.display=i<=totalPages?'inline-flex':'none';}}var prev=document.getElementById('btn-prev-page');if(prev)prev.disabled=(currentPage===1);var next=document.getElementById('btn-next-page');if(next)next.disabled=(currentPage>=totalPages);};window.toggleHelpful=function(btn){var span=btn.querySelector('span');var svg=btn.querySelector('svg');var count=parseInt(span.innerText.replace(/[^0-9]/g,''))||0;if(!btn.dataset.voted){btn.dataset.voted='true';btn.className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand text-white border border-transparent text-xs font-semibold shadow-sm transition-all active:scale-95';if(svg){svg.classList.add('fill-amber-400','text-amber-400','scale-110');}span.innerText='Đã thích ('+(count+1)+')';if(typeof showToast==='function')showToast('Đã ghi nhận đánh giá hữu ích của bạn!');}else{btn.dataset.voted='';btn.className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand/20 bg-emerald-50/50 hover:bg-emerald-100/60 text-gray-700 hover:text-brand text-xs font-medium transition-all active:scale-95 shadow-sm';if(svg){svg.classList.remove('fill-amber-400','text-amber-400','scale-110');}span.innerText='Hữu ích ('+(count-1)+')';}};if(typeof lucide!=='undefined'&&lucide.createIcons){lucide.createIcons();}})();</script><style id="pagination-reaction-styles">
+.page-btn-base {
+  display: grid !important;
+  place-items: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  border-radius: 6px !important;
+  box-sizing: border-box !important;
+}
+.reaction-btn-active {
+  color: #15803d !important;
+  border-color: #15803d !important;
+  background-color: #ecfdf5 !important;
+}
+.reaction-btn-active svg {
+  fill: #15803d !important;
+  stroke: #15803d !important;
+}
+</style>
+<script id="pagination-reaction-script">
+(function() {
+  function fixPaginationStyles() {
+    var totalPages = Math.ceil(allShops.length / pageSize) || 3;
+    var label = document.getElementById('page-display-label');
+    if (label) label.innerText = 'Trang ' + currentPage + ' / ' + totalPages;
+
+    for (var i = 1; i <= 3; i++) {
+      var btn = document.getElementById('page-num-' + i);
+      if (btn) {
+        btn.className = 'w-8 h-8 rounded-md p-0 text-sm transition cursor-pointer page-btn-base ' +
+          (i === currentPage ? 'bg-brand text-white font-bold shadow-sm' : 'bg-transparent text-gray-700 font-medium hover:bg-gray-100 hover:text-brand');
+        btn.style.cssText = 'display: grid; place-items: center; width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px; padding: 0; line-height: 1; text-align: center; border-radius: 6px; box-sizing: border-box;';
+        btn.style.display = i <= totalPages ? 'grid' : 'none';
+      }
+    }
+    var prev = document.getElementById('btn-prev-page');
+    if (prev) {
+      prev.disabled = (currentPage === 1);
+      prev.style.cssText = 'display: grid; place-items: center; width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px; padding: 0; line-height: 1; text-align: center; border-radius: 6px; box-sizing: border-box;';
+    }
+    var next = document.getElementById('btn-next-page');
+    if (next) {
+      next.disabled = (currentPage >= totalPages);
+      next.style.cssText = 'display: grid; place-items: center; width: 32px; height: 32px; min-width: 32px; max-width: 32px; min-height: 32px; max-height: 32px; padding: 0; line-height: 1; text-align: center; border-radius: 6px; box-sizing: border-box;';
+    }
+  }
+
+  window.updatePaginationControls = function(totalItems) {
+    fixPaginationStyles();
+  };
+
+  var originalGoToPage = window.goToPage;
+  window.goToPage = function(page) {
+    if (page === currentPage) return;
+    currentPage = page;
+    var grid = document.getElementById('food-grid');
+    if (grid) {
+      grid.style.opacity = '0';
+      grid.style.transform = 'translateY(8px)';
+      grid.style.transition = 'opacity 180ms ease, transform 180ms ease';
+    }
+    setTimeout(function() {
+      renderFoodGrid();
+      if (grid) {
+        grid.style.opacity = '1';
+        grid.style.transform = 'translateY(0)';
+      }
+      fixPaginationStyles();
+      scrollToFoodSection();
+    }, 180);
+  };
+
+  window.toggleHelpful = function(btn) {
+    var span = btn.querySelector('span');
+    var svg = btn.querySelector('svg');
+    var count = parseInt(span.innerText.replace(/[^0-9]/g, '')) || 0;
+    if (!btn.dataset.initialCount) {
+      btn.dataset.initialCount = count;
+    }
+    var initial = parseInt(btn.dataset.initialCount);
+
+    if (!btn.dataset.voted) {
+      btn.dataset.voted = 'true';
+      btn.classList.add('reaction-btn-active');
+      span.innerText = 'Hữu ích (' + (initial + 1) + ')';
+      span.style.color = '#15803d';
+      span.style.fontWeight = '700';
+      if (svg) {
+        svg.style.fill = '#15803d';
+        svg.style.stroke = '#15803d';
+      }
+      if (typeof showToast === 'function') showToast('Cảm ơn bạn đã phản hồi!');
+    } else {
+      btn.dataset.voted = '';
+      btn.classList.remove('reaction-btn-active');
+      span.innerText = 'Hữu ích (' + initial + ')';
+      span.style.color = '';
+      span.style.fontWeight = '';
+      if (svg) {
+        svg.style.fill = 'none';
+        svg.style.stroke = 'currentColor';
+      }
+    }
+  };
+
+  fixPaginationStyles();
+})();
+</script>
+
+
+
+</body></html>
